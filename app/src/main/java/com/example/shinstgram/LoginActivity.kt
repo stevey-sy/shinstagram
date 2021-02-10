@@ -67,8 +67,11 @@ class LoginActivity : AppCompatActivity() {
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 //        printHashKey()
         callbackManager = CallbackManager.Factory.create()
+    }
 
-
+    override fun onStart() {
+        super.onStart()
+        moveMainPage(auth?.currentUser)
     }
 
     fun printHashKey() {
@@ -194,6 +197,7 @@ class LoginActivity : AppCompatActivity() {
     fun moveMainPage(user: FirebaseUser?) {
         if (user != null) {
             startActivity(Intent(this, MainActivity::class.java))
+            finish()
         }
     }
 }
