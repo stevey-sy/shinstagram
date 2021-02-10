@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import com.example.shinstgram.navigation.*
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.android.synthetic.main.activity_main.*
 
 // Bottom Navigation View 의 item selected listener 를 implements 한다
@@ -44,6 +45,11 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
             }
             R.id.action_account -> {
                 val userFragment = UserFragment()
+                // uid 데이터를 bundle 에 넣어서 user fragment 에 보낸다.
+                val bundle = Bundle()
+                val uid = FirebaseAuth.getInstance().currentUser?.uid
+                bundle.putString("destinationUid", uid)
+                userFragment.arguments = bundle
                 supportFragmentManager.beginTransaction().replace(R.id.main_content, userFragment).commit()
                 return true
             }
