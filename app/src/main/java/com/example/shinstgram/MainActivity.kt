@@ -59,6 +59,9 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
         // 외부 저장소 사용 권한 요청
         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 1)
 
+        // set default screen
+        bottom_navigation.selectedItemId = R.id.action_home
+
     }
 
 }
