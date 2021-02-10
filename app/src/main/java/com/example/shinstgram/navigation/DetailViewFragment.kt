@@ -43,6 +43,8 @@ class DetailViewFragment : Fragment() {
                 ?.addSnapshotListener { querySnapshot, firebaseFirestoreException ->
                     contentDTOs.clear()
                     contentUidList.clear()
+                    if(querySnapshot == null) return@addSnapshotListener
+
                     for (snapshot in querySnapshot!!.documents) {
                         var item = snapshot.toObject(ContentDTO::class.java)
                         contentDTOs.add(item!!)
@@ -101,6 +103,15 @@ class DetailViewFragment : Fragment() {
             } else {
                 // 좋아요 버튼 클릭하지 않은 경우
                 viewholder.detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_favorite_border)
+            }
+            // 상대가 유저 정보로 오는 코드
+            viewholder.detailviewitem_profile_image.setOnClickListener {
+                var fragment = UserFragment()
+                var bundle = Bundle()
+                bundle.putString("destinatonUid", contentDTOs[position].uid)
+                bundle.putString("userId", contentDTOs[position].userId)
+                fragment.arguments = bundle
+                activity?.supportFragmentManager?.beginTransaction()?.replace(R.id.main_content, fragment)?.commit()
             }
         }
 
