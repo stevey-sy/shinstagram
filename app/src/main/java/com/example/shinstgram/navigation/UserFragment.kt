@@ -1,6 +1,7 @@
 package com.example.shinstgram.navigation
 
 import android.content.Intent
+import android.graphics.PorterDuff
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -8,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.appcompat.widget.LinearLayoutCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -18,8 +20,10 @@ import com.example.shinstgram.LoginActivity
 import com.example.shinstgram.MainActivity
 import com.example.shinstgram.R
 import com.example.shinstgram.navigation.model.ContentDTO
+import com.example.shinstgram.navigation.model.FollowDTO
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_user.view.*
 
@@ -33,6 +37,7 @@ class UserFragment : Fragment() {
     companion object {
         var PICKER_PROFILE_FROM_ALBUM = 10
     }
+    var imageprofileListenerRegistration: ListenerRegistration? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -67,6 +72,10 @@ class UserFragment : Fragment() {
             mainactivity?.toolbar_title_image?.visibility = View.GONE
             mainactivity?.toolbar_username?.visibility = View.VISIBLE
             mainactivity?.toolbar_btn_back?.visibility = View.VISIBLE
+            // follow 기능 메소드 2021.02.11
+            fragmentView?.account_btn_follow_signout?.setOnClickListener {
+                requestFollow()
+            }
         }
         // 어뎁터 세팅
         fragmentView?.account_recyclerview?.adapter = UserFragmentRecyclerViewAdapter()
@@ -79,13 +88,105 @@ class UserFragment : Fragment() {
             activity?.startActivityForResult(photoPickerIntent, PICKER_PROFILE_FROM_ALBUM)
         }
         getProfileImage()
+        getFollowerAndFollowing()
         return fragmentView
     }
+    // follow, follow 취소 버튼 활성화 메소드 / 2021.02.11
+    fun getFollowerAndFollowing() {
+        firestore?.collection("users")?.document(uid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
+            if(documentSnapshot == null) return@addSnapshotListener
+            // firestore 에서 받아온 snapshot 을 follow DTO 객체로 가공
+            var followDTO = documentSnapshot.toObject(FollowDTO::class.java)
+            if(followDTO?.followingCount != null) {
+                fragmentView?.account_tv_following_count?.text = followDTO?.followingCount?.toString()
+            }
+            if(followDTO?.followerCount != null) {
+                fragmentView?.account_tv_follow_count?.text = followDTO?.followerCount?.toString()
+                if(followDTO?.followers?.containsKey(currentUserUid!!)) {
+                    fragmentView?.account_btn_follow_signout?.text = getString(R.string.follow_cancel)
+                    fragmentView?.account_btn_follow_signout?.background?.setColorFilter(
+                        ContextCompat.getColor(activity!!, R.color.colorLightGray), PorterDuff.Mode.MULTIPLY)
+                } else {
+                    fragmentView?.account_btn_follow_signout?.text = getString(R.string.follow)
+                    if(uid != currentUserUid) {
+                        fragmentView?.account_btn_follow_signout?.background?.colorFilter = null
+                    }
+
+                }
+            }
+        }
+    }
+    // follow 클릭했을 때의 메소드 2021.02.11
+    fun requestFollow() {
+        // 다른 사람이 나를 follow 할 때의 경우
+        // 나를 follow 한사람의 uid 정보를 db에 저장
+        var tsDocFollowing = firestore!!.collection("users").document(currentUserUid!!)
+        firestore?.runTransaction { transaction ->
+            var followDTO = transaction.get(tsDocFollowing).toObject(FollowDTO::class.java)
+            // 아직 아무도 follow 누르지 않았을 때의 경우
+            if(followDTO == null) {
+                // follow 정보를 저장할 dto 생성
+                followDTO = FollowDTO()
+                followDTO.followingCount = 1
+                followDTO.followers[uid!!] = true
+                transaction.set(tsDocFollowing, followDTO)
+                return@runTransaction
+            }
+            // 해당 유저가 이미 follow 를 눌렀었던 경우 (follow 취소)
+            if(followDTO?.followings?.containsKey(uid)!!) {
+                // follow 취소
+                followDTO?.followingCount = followDTO?.followingCount -1
+//                followDTO?.followingCount -= 1
+                // follow 리스트에서 uid 제거
+                followDTO?.followers.remove(uid)
+            }else {
+                // follow 시작
+                followDTO?.followingCount = followDTO?.followingCount +1
+                // follow 리스트에 uid 추가
+                followDTO!!.followers[uid!!] = true
+            }
+            transaction.set(tsDocFollowing, followDTO)
+            return@runTransaction
+        }
+        // 내가 다른 사람을 follow 할 경우
+        // firestore 에서 해당 유저의 follower 데이터를 가져온다
+        var tsDocFollower = firestore!!.collection("users")?.document(uid!!)
+        firestore?.runTransaction { transaction ->
+            // 받아온 데이터를 followDTO type 으로 가공한다.
+            var followDTO = transaction.get(tsDocFollower).toObject(FollowDTO::class.java)
+            // 해당 유저의 follower 데이터가 존재하지 않을 경우
+            if(followDTO == null) {
+                // 새로 만든다
+                var followDTO = FollowDTO()
+                followDTO!!.followerCount = 1
+                // 나의 uid 를 상대방(내가 follower 한 유저) follower 데이터에 추가
+                followDTO!!.followers[currentUserUid!!] = true
+                transaction.set(tsDocFollower, followDTO!!)
+                return@runTransaction
+            }
+            // 내가 상대방을 follower 취소, 시작 할 때.
+            if(followDTO!!.followers?.containsKey(currentUserUid!!)!!) {
+                // follower 취소
+                followDTO!!.followerCount = followDTO!!.followerCount -1
+//                followDTO!!.followerCount -= 1
+                // follow 리스트에서 uid 제거
+                followDTO!!.followers.remove(currentUserUid)
+            } else {
+                followDTO!!.followerCount += 1
+//                followDTO!!.followerCount = followDTO!!.followerCount +1
+                followDTO!!.followers[currentUserUid!!] = true
+            }
+            // db 종료
+            transaction.set(tsDocFollower, followDTO!!)
+            return@runTransaction
+        }
+
+    }
+
     // 서버 저장소에 있는 프로필 이미지를 view에 뿌려주는 메소드 / 2021.02.11
     fun getProfileImage() {
         // collection 은 firestore 의 세부 폴더 개념인 것 같음.
-        firestore?.collection("profileImages")?.document(uid!!)?.addSnapshotListener {
-            documentSnapshot, firebaseFirestoreException ->
+        firestore?.collection("profileImages")?.document(uid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
             // 실시간으로 체크하기 위해서 snapshot을 쓴다?
             // snapshot 이 null 이면 전단계로 빠져나오는 return?
             if(documentSnapshot == null) return@addSnapshotListener
