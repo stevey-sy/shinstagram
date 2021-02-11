@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.TransformationUtils.circleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.example.shinstgram.LoginActivity
 import com.example.shinstgram.MainActivity
@@ -28,6 +29,10 @@ class UserFragment : Fragment() {
     var uid : String? = null
     var auth : FirebaseAuth? = null
     var currentUserUid : String? = null
+    // static 과 비슷한 역할
+    companion object {
+        var PICKER_PROFILE_FROM_ALBUM = 10
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -67,7 +72,30 @@ class UserFragment : Fragment() {
         fragmentView?.account_recyclerview?.adapter = UserFragmentRecyclerViewAdapter()
         // 레이아웃 세팅
         fragmentView?.account_recyclerview?.layoutManager = GridLayoutManager(activity!!, 3)
+        // 프로필 버튼 클릭 이벤트 / 2021.02.11
+        fragmentView?.account_iv_profile?.setOnClickListener {
+            var photoPickerIntent = Intent(Intent.ACTION_PICK)
+            photoPickerIntent.type = "image/*"
+            activity?.startActivityForResult(photoPickerIntent, PICKER_PROFILE_FROM_ALBUM)
+        }
+        getProfileImage()
         return fragmentView
+    }
+    // 서버 저장소에 있는 프로필 이미지를 view에 뿌려주는 메소드 / 2021.02.11
+    fun getProfileImage() {
+        // collection 은 firestore 의 세부 폴더 개념인 것 같음.
+        firestore?.collection("profileImages")?.document(uid!!)?.addSnapshotListener {
+            documentSnapshot, firebaseFirestoreException ->
+            // 실시간으로 체크하기 위해서 snapshot을 쓴다?
+            // snapshot 이 null 이면 전단계로 빠져나오는 return?
+            if(documentSnapshot == null) return@addSnapshotListener
+            // snapshot 에 url 데이터가 들어 있다면
+            if(documentSnapshot.data != null) {
+                // url 변수에 넣어서 glide 로 사진 출력
+                var url = documentSnapshot?.data!!["image"]
+                Glide.with(activity!!).load(url).apply(RequestOptions().circleCrop()).into(fragmentView?.account_iv_profile!!)
+            }
+        }
     }
     inner class UserFragmentRecyclerViewAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         var contentDTOs : ArrayList<ContentDTO> = arrayListOf()
