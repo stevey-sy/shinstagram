@@ -96,36 +96,42 @@ class LoginActivity : AppCompatActivity() {
 
     fun facebookLogin() {
         LoginManager.getInstance()
-            .logInWithReadPermissions(this, Arrays.asList("public_profile","email"))
+            .logInWithReadPermissions(this, Arrays.asList("email", "public_profile", "user_friends"))
+//            .logInWithReadPermissions(this, Arrays.asList("public_profile","email"))
 
         LoginManager.getInstance()
             .registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
                 override fun onSuccess(result: LoginResult?) {
                     // second step
                     handleFacebookAccessToken(result?.accessToken)
+                    Log.d("fecebook 로그인", "성공")
                 }
 
                 override fun onCancel() {
+                    Log.d("fecebook 로그인", "취소")
 
                 }
 
                 override fun onError(error: FacebookException?) {
-
+                    Log.d("fecebook 로그인", "에러 발생 $error")
                 }
 
             })
     }
 
     fun handleFacebookAccessToken(token : AccessToken?) {
+        Log.d("fecebook 로그인Token", "Token: ${token}")
         var credential = FacebookAuthProvider.getCredential(token?.token!!)
         auth?.signInWithCredential(credential)
             ?.addOnCompleteListener { task ->
                 if(task.isSuccessful) {
                     // last step
                     // Log in
+                    Log.d("fecebook handle Token", "success")
                     moveMainPage(task.result?.user)
                 } else if (task.exception?.message.isNullOrEmpty()) {
                     // Show error message
+                    Log.d("fecebook handle Token", "failed")
                     Toast.makeText(this, task.exception?.message, Toast.LENGTH_SHORT)
                 }
             }
@@ -133,6 +139,7 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        Log.d("fecebook 로그인", "onActivityResult")
         callbackManager?.onActivityResult(requestCode, resultCode, data)
         if (requestCode == GOOGLE_LOGIN_CODE) {
             val result = Auth.GoogleSignInApi.getSignInResultFromIntent(data)
