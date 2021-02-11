@@ -1,7 +1,8 @@
 package com.example.shinstgram.navigation.model
 
 // Data Transfer Object
-data class ContentDTO ( var explain : String? = null,
+data class ContentDTO (
+                   var explain : String? = null,
                    var imageUrl : String? = null,
                    var uid : String? = null,
                    var userId : String? = null,
