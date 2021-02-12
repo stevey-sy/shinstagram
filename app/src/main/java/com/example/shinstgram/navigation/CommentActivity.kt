@@ -60,6 +60,7 @@ class CommentActivity : AppCompatActivity() {
     // 댓글 알림 메소드 / 2021.02.12
     fun commentAlarm(destinationUid: String, message : String){
         var alarmDTO = AlarmDTO()
+        alarmDTO.kind = 1
         alarmDTO.destinationUid = destinationUid
         alarmDTO.userId = FirebaseAuth.getInstance().currentUser?.email
         alarmDTO.uid = FirebaseAuth.getInstance().currentUser?.uid
