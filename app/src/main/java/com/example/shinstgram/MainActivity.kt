@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import androidx.core.app.ActivityCompat
@@ -16,6 +17,8 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
 import kotlinx.android.synthetic.main.activity_main.*
@@ -67,7 +70,20 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
         toolbar_username.visibility = View.GONE
         toolbar_btn_back.visibility = View.GONE
         toolbar_title_image.visibility = View.VISIBLE
+    }
+    // token 생성 메소드
+    fun registerPushToken() {
+        FirebaseInstanceId.getInstance().instanceId.addOnCompleteListener {
+        task ->
+            val token = task.result?.token
+            val uid = FirebaseAuth.getInstance().currentUser?.uid
+            val map = mutableMapOf<String,Any>()
+            map["pushToken"] = token!!
 
+            FirebaseFirestore.getInstance().collection("pushtokens").document(uid!!).set(map)
+
+        }
+//        FirebaseInstallations.getInstance().
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,6 +96,8 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
 
         // set default screen
         bottom_navigation.selectedItemId = R.id.action_home
+        // token 생성 메소드
+        registerPushToken()
     }
 
     // 프로필 이미지 업데이트 메소드  / 2021.02.11
