@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.shinstgram.R
+import com.example.shinstgram.navigation.model.AlarmDTO
 import com.example.shinstgram.navigation.model.ContentDTO
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -107,8 +108,8 @@ class DetailViewFragment : Fragment() {
             }
             // 상대가 유저 정보로 오는 코드
             viewholder.detailviewitem_profile_image.setOnClickListener {
-                var fragment = UserFragment()
-                var bundle = Bundle()
+                val fragment = UserFragment()
+                val bundle = Bundle()
                 bundle.putString("destinationUid", contentDTOs[position].uid)
                 bundle.putString("userId", contentDTOs[position].userId)
                 fragment.arguments = bundle
@@ -116,8 +117,11 @@ class DetailViewFragment : Fragment() {
             }
             // 댓글 이미지 버튼 클릭 이벤트
             viewholder.detailviewitem_comment_imageview.setOnClickListener { v ->
-                var intent = Intent(v.context, CommentActivity::class.java)
+                val intent = Intent(v.context, CommentActivity::class.java)
+                // 게시글 번호
                 intent.putExtra("contentUid", contentUidList[position])
+                // 게시글 작성자 uid
+                intent.putExtra("destinationUid", contentDTOs[position].uid)
                 startActivity(intent)
             }
         }
@@ -143,11 +147,23 @@ class DetailViewFragment : Fragment() {
                     // 눌려있지 않다
                     contentDTO?.favoriteCount = contentDTO?.favoriteCount +1
                     contentDTO?.favorites[uid!!] = true
+                    favoriteAlarm(contentDTOs[position].uid!!)
                 }
                 // 수정된 좋아요 정보를 업로드 한다.
                 transaction.set(tsDoc,contentDTO)
 
             }
+        }
+        // 좋아요 버튼 이벤트 메소드 / 2021.02.12
+        fun favoriteAlarm(destinationUid : String) {
+            var alarmDTO = AlarmDTO()
+            alarmDTO.destinationUid = destinationUid
+            alarmDTO.userId = FirebaseAuth.getInstance().currentUser?.email
+            alarmDTO.uid = FirebaseAuth.getInstance().currentUser?.uid
+            alarmDTO.kind = 0
+            alarmDTO.timestamp = System.currentTimeMillis()
+            // alarmDTO 에 담은 데이터를 Firestore (db) 에 저장
+            FirebaseFirestore.getInstance().collection("alarms").document().set(alarmDTO)
         }
 
 
