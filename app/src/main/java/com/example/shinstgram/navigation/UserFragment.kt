@@ -19,6 +19,7 @@ import com.bumptech.glide.request.RequestOptions
 import com.example.shinstgram.LoginActivity
 import com.example.shinstgram.MainActivity
 import com.example.shinstgram.R
+import com.example.shinstgram.navigation.model.AlarmDTO
 import com.example.shinstgram.navigation.model.ContentDTO
 import com.example.shinstgram.navigation.model.FollowDTO
 import com.google.firebase.auth.FirebaseAuth
@@ -48,7 +49,6 @@ class UserFragment : Fragment() {
         fragmentView = LayoutInflater.from(activity).inflate(R.layout.fragment_user,container, false)
         // 이전 view 에서 받아온 데이터 활용
         uid = arguments?.getString("destinationUid")
-        uid?.let { Log.d("유아이디", it) }
         Log.d("유아이디2", uid.toString())
         firestore = FirebaseFirestore.getInstance()
         auth = FirebaseAuth.getInstance()
@@ -162,6 +162,7 @@ class UserFragment : Fragment() {
                 // 나의 uid 를 상대방(내가 follower 한 유저) follower 데이터에 추가
                 followDTO!!.followers[currentUserUid!!] = true
                 transaction.set(tsDocFollower, followDTO!!)
+                followAlarm(uid!!)
                 return@runTransaction
             }
             // 내가 상대방을 follower 취소, 시작 할 때.
@@ -172,15 +173,32 @@ class UserFragment : Fragment() {
                 // follow 리스트에서 uid 제거
                 followDTO!!.followers.remove(currentUserUid)
             } else {
+                // follow 시작할 때
                 followDTO!!.followerCount += 1
 //                followDTO!!.followerCount = followDTO!!.followerCount +1
                 followDTO!!.followers[currentUserUid!!] = true
+                // follow 알림 메소드
+                followAlarm(uid!!)
             }
             // db 종료
             transaction.set(tsDocFollower, followDTO!!)
             return@runTransaction
         }
 
+    }
+    // follow 알림 메소드 / 2021.02.12
+    fun followAlarm(destinationUid : String) {
+        var alarmDTO = AlarmDTO()
+        // 알림을 받을 사용자의 uid
+        alarmDTO.destinationUid = destinationUid
+        Log.d("*** destinationUid", destinationUid)
+        alarmDTO.userId = auth?.currentUser?.email
+        alarmDTO.timestamp = System.currentTimeMillis()
+        // 현재 app 사용중인 유저
+        alarmDTO.uid = auth?.currentUser?.uid
+        Log.d("*** uid", auth?.currentUser?.uid.toString())
+        alarmDTO.kind = 2
+        FirebaseFirestore.getInstance().collection("alarms").document().set(alarmDTO)
     }
 
     // 서버 저장소에 있는 프로필 이미지를 view에 뿌려주는 메소드 / 2021.02.11
