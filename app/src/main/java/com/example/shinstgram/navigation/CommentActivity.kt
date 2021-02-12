@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.shinstgram.R
+import com.example.shinstgram.navigation.model.AlarmDTO
 import com.example.shinstgram.navigation.model.ContentDTO
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -18,16 +19,20 @@ import kotlinx.android.synthetic.main.item_comment.view.*
 
 class CommentActivity : AppCompatActivity() {
     var contentUid : String? = null
+    var destinationUid : String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_comment)
-        // 댓글 작성자
+
+        // 댓글 작성자 정보
         contentUid = intent.getStringExtra("contentUid")
+        destinationUid = intent.getStringExtra("destinationUid")
+
         // 리사이클러뷰 세팅  / 2021.02.11
         comment_recyclerview.adapter = CommentRecyclerviewAdapter()
         comment_recyclerview.layoutManager = LinearLayoutManager(this)
 
-        // 댓글 추가 버튼 클릭 이벤트
+        // 댓글 추가 버튼 클릭 이벤트 / 2021.02.11
         comment_btn_send?.setOnClickListener {
             // Content DTO 의 comment 클래스 생성
             // 유저의 정보, 댓글 내용을 매개변수로 담는다.
@@ -46,10 +51,24 @@ class CommentActivity : AppCompatActivity() {
                 .collection("comments")
                 .document()
                 .set(comment)
+            // 댓글 알림 이벤트 메소드
+            commentAlarm(destinationUid!!, comment_edit_message.text.toString())
             // 댓글 업로드 완료하고 edit text 초기화
             comment_edit_message.setText("")
         }
     }
+    // 댓글 알림 메소드 / 2021.02.12
+    fun commentAlarm(destinationUid: String, message : String){
+        var alarmDTO = AlarmDTO()
+        alarmDTO.destinationUid = destinationUid
+        alarmDTO.userId = FirebaseAuth.getInstance().currentUser?.email
+        alarmDTO.uid = FirebaseAuth.getInstance().currentUser?.uid
+        alarmDTO.timestamp = System.currentTimeMillis()
+        alarmDTO.message = message
+        // alarmDTO 를 db에 저장
+        FirebaseFirestore.getInstance().collection("alarms").document().set(alarmDTO)
+    }
+
     // 저장된 댓글들을 불러오는 리사이클러뷰 adapter / 2021.02.11
     inner class CommentRecyclerviewAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
