@@ -68,6 +68,10 @@ class CommentActivity : AppCompatActivity() {
         alarmDTO.message = message
         // alarmDTO 를 db에 저장
         FirebaseFirestore.getInstance().collection("alarms").document().set(alarmDTO)
+        // 댓글 알림 보내기
+        var msg = FirebaseAuth.getInstance().currentUser?.email + " " + getString(R.string.alarm_comment) + " of " + message
+        FcmPush.instance.sendMessage(destinationUid, "Shinstagram", msg)
+
     }
 
     // 저장된 댓글들을 불러오는 리사이클러뷰 adapter / 2021.02.11

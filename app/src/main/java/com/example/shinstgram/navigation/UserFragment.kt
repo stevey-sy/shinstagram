@@ -199,6 +199,11 @@ class UserFragment : Fragment() {
         Log.d("*** uid", auth?.currentUser?.uid.toString())
         alarmDTO.kind = 2
         FirebaseFirestore.getInstance().collection("alarms").document().set(alarmDTO)
+
+        // follow 버튼이 눌리면 push 메세지를 발신
+        var message = auth?.currentUser?.email + getString(R.string.alarm_follow)
+        FcmPush.instance.sendMessage(destinationUid, "Shinstagram", message)
+
     }
 
     // 서버 저장소에 있는 프로필 이미지를 view에 뿌려주는 메소드 / 2021.02.11
