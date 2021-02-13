@@ -1,5 +1,6 @@
 package com.example.shinstgram.navigation
 
+import android.app.Activity
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -16,19 +17,59 @@ import com.example.shinstgram.navigation.model.ContentDTO
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.android.synthetic.main.activity_comment.*
+import kotlinx.android.synthetic.main.fragment_user.view.*
 import kotlinx.android.synthetic.main.item_comment.view.*
+import kotlinx.android.synthetic.main.item_detail.view.*
 
 class CommentActivity : AppCompatActivity() {
+
     var contentUid : String? = null
     var destinationUid : String? = null
-    var firestore: FirebaseFirestore? = null
+    var imageUrl : String? = null
+    var userId : String? = null
+    var explain : String? = null
+    var profileUrl : String? = null
+    var firestore : FirebaseFirestore? = null
+    var auth : FirebaseAuth? = null
+    var currentUserUid : String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_comment)
 
+        // firestore 초기화
+        firestore = FirebaseFirestore.getInstance()
+
+        // 현재 App 사용자 정보
+        auth = FirebaseAuth.getInstance()
+        currentUserUid = auth?.currentUser?.uid
+
         // 댓글 작성자 정보
         contentUid = intent.getStringExtra("contentUid")
         destinationUid = intent.getStringExtra("destinationUid")
+
+        // 선택된 게시글 정보
+        imageUrl = intent.getStringExtra("imageURL")
+        userId = intent.getStringExtra("userId")
+        explain = intent.getStringExtra("explain")
+        profileUrl = intent.getStringExtra("profileURL")
+
+        // 현재 사용자 프로필 이미지 가져오기
+        getProfileImage()
+
+        // 작성자 프로필 이미지 입히기
+        Glide.with(this)
+            .load(profileUrl)
+            .apply(RequestOptions().circleCrop())
+            .into(detailviewitem_profile_image)
+        // 게시글 작성자 id
+        detailviewitem_profile_textview.text = userId
+        // 게시글 text 내용
+        detailviewitem_explain_textview.text = explain
+        // 게시글 이미지 세팅
+        Glide.with(this)
+            .load(imageUrl)
+            .into(detailviewitem_imageview_content)
 
         // 리사이클러뷰 세팅  / 2021.02.11
         comment_recyclerview.adapter = CommentRecyclerviewAdapter()
@@ -68,6 +109,21 @@ class CommentActivity : AppCompatActivity() {
             commentAlarm(destinationUid!!, comment_edit_message.text.toString())
             // 댓글 업로드 완료하고 edit text 초기화
             comment_edit_message.setText("")
+        }
+    }
+    // 서버 저장소에 있는 프로필 이미지를 view에 뿌려주는 메소드 / 2021.02.11
+    fun getProfileImage() {
+        // collection 은 firestore 의 세부 폴더 개념인 것 같음.
+        firestore?.collection("profileImages")?.document(currentUserUid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
+            // 실시간으로 체크하기 위해서 snapshot을 쓴다?
+            // snapshot 이 null 이면 전단계로 빠져나오는 return?
+            if(documentSnapshot == null) return@addSnapshotListener
+            // snapshot 에 url 데이터가 들어 있다면
+            if(documentSnapshot.data != null) {
+                // url 변수에 넣어서 glide 로 사진 출력
+                var url = documentSnapshot?.data!!["image"]
+                Glide.with(this).load(url).apply(RequestOptions().circleCrop()).into(detailviewitem_profile_image_comment)
+            }
         }
     }
     // 댓글 알림 메소드 / 2021.02.12
