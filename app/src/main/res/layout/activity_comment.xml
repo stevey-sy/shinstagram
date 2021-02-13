@@ -5,16 +5,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".navigation.CommentActivity">
+
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/my_toolbar"
         android:layout_width="match_parent"
-        android:layout_height="35dp" >
+        android:layout_height="70dp"
+        android:background="#000000" >
 
         <ImageView
             android:id="@+id/toolbar_title_image"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:src="@drawable/logo_title" />
+            android:src="@drawable/logo" />
     </androidx.appcompat.widget.Toolbar>
     <LinearLayout
         android:id="@+id/toolbar_division"
@@ -24,31 +26,89 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"/>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/comment_recyclerview"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="30dp"
-        android:layout_below="@id/toolbar_division"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-    <Button
-        android:id="@+id/comment_btn_send"
-        android:layout_alignParentRight="true"
-        android:layout_margin="10dp"
-        android:text="@string/send"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/comment_recyclerview"
-        android:theme="@style/ButtonStyle"
-        android:layout_alignParentEnd="true" />
-    <EditText
-        android:id="@+id/comment_edit_message"
-        android:layout_toLeftOf="@id/comment_btn_send"
-        android:layout_below="@id/comment_recyclerview"
-        android:layout_margin="10dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_toStartOf="@id/comment_btn_send" />
-    
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar_division">
+
+        <LinearLayout
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+            <LinearLayout
+                android:gravity="center_vertical"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="#000000">
+
+                <ImageView
+                    android:id="@+id/detailviewitem_profile_image"
+                    android:src="@drawable/ic_launcher_foreground"
+                    android:layout_width="35dp"
+                    android:layout_margin="7.5dp"
+                    android:layout_height="35dp" />
+                <TextView
+                    android:text="User name"
+                    android:id="@+id/detailviewitem_profile_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/colorWhite"/>
+            </LinearLayout>
+            <ImageView
+                android:id="@+id/detailviewitem_imageview_content"
+                android:scaleType="fitXY"
+                android:layout_width="match_parent"
+                android:layout_height="250dp" />
+
+            <TextView
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:id="@+id/detailviewitem_explain_textview"
+                android:text="Explain content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <ImageView
+                    android:id="@+id/detailviewitem_profile_image_comment"
+                    android:src="@drawable/ic_launcher_foreground"
+                    android:layout_width="40dp"
+                    android:layout_margin="7.5dp"
+                    android:layout_height="40dp" />
+
+                <EditText
+                    android:id="@+id/comment_edit_message"
+                    android:layout_margin="10dp"
+                    android:layout_width="150dp"
+                    android:layout_height="wrap_content" />
+
+                <Button
+                    android:id="@+id/comment_btn_send"
+                    android:layout_margin="5dp"
+                    android:text="@string/send"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:theme="@style/ButtonStyle" />
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/comment_recyclerview"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="30dp"
+                android:layout_width="match_parent"
+                android:layout_height="500dp" />
+
+        </LinearLayout>
+
+    </ScrollView>
 
 </RelativeLayout>
