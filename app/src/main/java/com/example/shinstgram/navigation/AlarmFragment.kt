@@ -54,6 +54,7 @@ class AlarmFragment : Fragment() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             // 아이템 디자인 정의
             var view = LayoutInflater.from(parent.context).inflate(R.layout.item_comment, parent, false)
+            view.commentviewitem_textview_regtime.visibility = View.GONE
             // custom view holder 에서 view 를 가공한다.
             return CustomViewHolder(view)
         }
@@ -79,20 +80,21 @@ class AlarmFragment : Fragment() {
                 // 좋아요 알람 경우
                 0 -> {
                     val str = alarmDTOList[position].userId + getString(R.string.alarm_favorite)
-                    view.commentviewitem_textview_profile.text = str
+                    view.commentviewitem_textview_comment.text = str
                 }
                 // 댓글 알람
                 1 -> {
-                    val str = alarmDTOList[position].userId + " " + getString(R.string.alarm_comment) + " of " + alarmDTOList[position].message
-                    view.commentviewitem_textview_profile.text = str
+                    val str = alarmDTOList[position].userId + " " + getString(R.string.alarm_comment) + " \n\" " + alarmDTOList[position].message +"\""
+                    view.commentviewitem_textview_comment.text = str
                 }
                 // follow 알람
                 2 -> {
                     val str = alarmDTOList[position].userId + getString(R.string.alarm_follow)
-                    view.commentviewitem_textview_profile.text = str
+                    view.commentviewitem_textview_comment.text = str
                 }
             }
-            view.commentviewitem_textview_comment.visibility = View.INVISIBLE
+            view.commentviewitem_textview_profile.visibility = View.GONE
+//            view.commentviewitem_textview_comment.visibility = View.INVISIBLE
         }
 
         override fun getItemCount(): Int {
