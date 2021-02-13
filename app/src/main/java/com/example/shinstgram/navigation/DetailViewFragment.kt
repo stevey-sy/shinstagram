@@ -53,8 +53,9 @@ class DetailViewFragment : Fragment() {
 
                     for (snapshot in querySnapshot!!.documents) {
                         var item = snapshot.toObject(ContentDTO::class.java)
-                        contentDTOs.add(item!!)
-                        contentUidList.add(snapshot.id)
+                        // 데이터 역순으로 가져오기
+                        contentDTOs.add(0, item!!)
+                        contentUidList.add(0, snapshot.id)
                         Log.d("콘텐트 UID", snapshot.id)
                     }
                     notifyDataSetChanged()
