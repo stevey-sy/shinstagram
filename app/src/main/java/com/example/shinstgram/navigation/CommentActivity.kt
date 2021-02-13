@@ -1,12 +1,14 @@
 package com.example.shinstgram.navigation
 
 import android.app.Activity
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -20,6 +22,8 @@ import kotlinx.android.synthetic.main.activity_comment.*
 import kotlinx.android.synthetic.main.fragment_user.view.*
 import kotlinx.android.synthetic.main.item_comment.view.*
 import kotlinx.android.synthetic.main.item_detail.view.*
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class CommentActivity : AppCompatActivity() {
 
@@ -33,6 +37,7 @@ class CommentActivity : AppCompatActivity() {
     var auth : FirebaseAuth? = null
     var currentUserUid : String? = null
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_comment)
@@ -77,12 +82,17 @@ class CommentActivity : AppCompatActivity() {
 
         // 댓글 추가 버튼 클릭 이벤트 / 2021.02.11
         comment_btn_send?.setOnClickListener {
+            // 현재 시간 얻기
+            val current = LocalDateTime.now()
+            val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+            val formatted = current.format(formatter)
             // Content DTO 의 comment 클래스 생성
             // 유저의 정보, 댓글 내용을 매개변수로 담는다.
             val comment = ContentDTO.Comment()
             comment.userId = FirebaseAuth.getInstance().currentUser?.email
             comment.uid = FirebaseAuth.getInstance().currentUser?.uid
             comment.comment = comment_edit_message.text.toString()
+            comment.uploadTime = formatted
             comment.timestamp = System.currentTimeMillis()
             // 가공한 데이터를 Firestore 에 보낸다.
             // 저장할 위치는 "images" 라는 collection
@@ -140,7 +150,6 @@ class CommentActivity : AppCompatActivity() {
         // 댓글 알림 보내기
         var msg = FirebaseAuth.getInstance().currentUser?.email + " " + getString(R.string.alarm_comment) + " of " + message
         FcmPush.instance.sendMessage(destinationUid, "Shinstagram", msg)
-
     }
 
     // 저장된 댓글들을 불러오는 리사이클러뷰 adapter / 2021.02.11
@@ -152,12 +161,13 @@ class CommentActivity : AppCompatActivity() {
                 .collection("images")
                 .document(contentUid!!)
                 .collection("comments")
+                .orderBy("timestamp")
                 .addSnapshotListener { querySnapshot, firebaseFirestoreException ->
                     comments.clear()
                     if(querySnapshot == null)return@addSnapshotListener
 
                     for(snapshot in querySnapshot.documents!!) {
-                        comments.add(snapshot.toObject(ContentDTO.Comment::class.java)!!)
+                        comments.add(0, snapshot.toObject(ContentDTO.Comment::class.java)!!)
                     }
                     notifyDataSetChanged()
                 }
@@ -179,7 +189,10 @@ class CommentActivity : AppCompatActivity() {
             var view = holder.itemView
             view.commentviewitem_textview_comment.text = comments[position].comment
             view.commentviewitem_textview_profile.text = comments[position].userId
-
+            if (comments[position].uploadTime != null) {
+                val convertedDate : String? = TimeConverter.CreateDataWithCheck(comments[position].uploadTime)
+                view.commentviewitem_textview_regtime.text = convertedDate
+            }
             FirebaseFirestore.getInstance()
                 .collection("profileImages")
                 .document(comments[position].uid!!)
