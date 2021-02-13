@@ -10,7 +10,7 @@
         android:layout_above="@id/signin_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:src="@drawable/logo_title"
+        android:src="@drawable/shinstagram_logo"
         android:layout_alignParentTop="true"/>
 
     <LinearLayout
@@ -48,6 +48,8 @@
         <Button
             android:id="@+id/email_login_button"
             android:text="@string/signin_email"
+            android:textStyle="bold"
+            android:textColor="@color/colorWhite"
             android:theme="@style/ButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="40dp"

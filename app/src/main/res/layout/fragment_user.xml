@@ -17,7 +17,7 @@
             android:layout_toRightOf="@id/account_iv_profile"
             android:layout_alignParentBottom="true"
             android:id="@+id/account_btn_follow_signout"
-            android:text="@string/follow"
+            android:text="@string/signout"
             android:layout_width="match_parent"
             android:layout_height="40dp" />
 
