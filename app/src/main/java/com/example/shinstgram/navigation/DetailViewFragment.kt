@@ -25,6 +25,7 @@ import kotlinx.android.synthetic.main.item_detail.view.*
 class DetailViewFragment : Fragment() {
     var firestore: FirebaseFirestore? = null
     var uid : String? = null
+    var profileUrl : String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // view 세팅
@@ -62,7 +63,6 @@ class DetailViewFragment : Fragment() {
                 }
         }
 
-
         override fun onCreateViewHolder(
             parent: ViewGroup,
             viewType: Int
@@ -98,6 +98,9 @@ class DetailViewFragment : Fragment() {
             viewholder.detailviewitem_commentcounter_textview.text =
                 contentDTOs[position].commentCount?.toString()
 
+            // upload time
+            viewholder.detailviewitem_uploadtime_textview.text = contentDTOs[position].uploadTime?.toString()
+
             // profile image / 2021.02.13 수정
             // 글 작성자의 uid 를 가져와야 됨.
             firestore?.collection("profileImages")?.document(contentDTOs!![position].uid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
@@ -108,9 +111,9 @@ class DetailViewFragment : Fragment() {
                 // snapshot 에 url 데이터가 들어 있다면
                 if(documentSnapshot.data != null) {
                     // url 변수에 넣어서 glide 로 사진 출력
-                    var url = documentSnapshot?.data!!["image"]
+                    profileUrl = documentSnapshot?.data!!["image"] as String?
                     Glide.with(holder.itemView.context)
-                        .load(url)
+                        .load(profileUrl)
                         .apply(RequestOptions().circleCrop())
                         .into(viewholder.detailviewitem_profile_image)
                 }
@@ -146,6 +149,13 @@ class DetailViewFragment : Fragment() {
                 intent.putExtra("contentUid", contentUidList[position])
                 // 게시글 작성자 uid
                 intent.putExtra("destinationUid", contentDTOs[position].uid)
+                // 게시글 내용
+                intent.putExtra("userId", contentDTOs[position].userId)
+                intent.putExtra("imageURL", contentDTOs[position].imageUrl)
+                intent.putExtra("explain", contentDTOs[position].explain)
+                intent.putExtra("profileURL", profileUrl)
+
+
                 startActivity(intent)
             }
         }
@@ -191,11 +201,7 @@ class DetailViewFragment : Fragment() {
 
             var message = FirebaseAuth.getInstance()?.currentUser?.email + getString(R.string.alarm_favorite)
             FcmPush.instance.sendMessage(destinationUid, "Shinstagram", message)
-
         }
-
-
-
     }
 }
 
