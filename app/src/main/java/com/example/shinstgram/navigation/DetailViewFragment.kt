@@ -1,7 +1,9 @@
 package com.example.shinstgram.navigation
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,12 +12,14 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import com.example.shinstgram.R
 import com.example.shinstgram.navigation.model.AlarmDTO
 import com.example.shinstgram.navigation.model.ContentDTO
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.android.synthetic.main.fragment_detail.view.*
+import kotlinx.android.synthetic.main.fragment_user.view.*
 import kotlinx.android.synthetic.main.item_detail.view.*
 
 class DetailViewFragment : Fragment() {
@@ -51,6 +55,7 @@ class DetailViewFragment : Fragment() {
                         var item = snapshot.toObject(ContentDTO::class.java)
                         contentDTOs.add(item!!)
                         contentUidList.add(snapshot.id)
+                        Log.d("콘텐트 UID", snapshot.id)
                     }
                     notifyDataSetChanged()
                 }
@@ -68,6 +73,7 @@ class DetailViewFragment : Fragment() {
         inner class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
         // 서버에서 넘어온 데이터들을 mapping 시키는 부분
+        @SuppressLint("SetTextI18n")
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
 
             var viewholder = (holder as CustomViewHolder).itemView
@@ -85,12 +91,29 @@ class DetailViewFragment : Fragment() {
 
             // likes
             viewholder.detailviewitem_favoritecounter_textview.text =
-                "Likes " + contentDTOs!![0].favoriteCount
+                contentDTOs!![position].favoriteCount.toString()
 
-            //profile image
-//            Glide.with(holder.itemView.context)
-//                .load(contentDTOs!![position].imageUrl)
-//                .into(viewholder.detailviewitem_profile_image)
+            // comment count
+            viewholder.detailviewitem_commentcounter_textview.text =
+                contentDTOs[position].commentCount?.toString()
+
+            // profile image / 2021.02.13 수정
+            // 글 작성자의 uid 를 가져와야 됨.
+            firestore?.collection("profileImages")?.document(contentDTOs!![position].uid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
+                contentDTOs!![position].uid?.let { Log.d("로그 uid", it) }
+                // 실시간으로 체크하기 위해서 snapshot을 쓴다?
+                // snapshot 이 null 이면 전단계로 빠져나오는 return?
+                if(documentSnapshot == null) return@addSnapshotListener
+                // snapshot 에 url 데이터가 들어 있다면
+                if(documentSnapshot.data != null) {
+                    // url 변수에 넣어서 glide 로 사진 출력
+                    var url = documentSnapshot?.data!!["image"]
+                    Glide.with(holder.itemView.context)
+                        .load(url)
+                        .apply(RequestOptions().circleCrop())
+                        .into(viewholder.detailviewitem_profile_image)
+                }
+            }
 
             // 좋아요 버튼 클릭 이벤트
             viewholder.detailviewitem_favorite_imageview.setOnClickListener {
@@ -100,11 +123,11 @@ class DetailViewFragment : Fragment() {
             // 내 uid 가 좋아요 누른 사람 목록에 포함되어 있다면
             if(contentDTOs!![position].favorites.containsKey(uid)) {
                 // 좋아요 버튼 클릭한 경우
-                viewholder.detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_favorite)
+                viewholder.detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_orange)
 
             } else {
                 // 좋아요 버튼 클릭하지 않은 경우
-                viewholder.detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_favorite_border)
+                viewholder.detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_gray)
             }
             // 상대가 유저 정보로 오는 코드
             viewholder.detailviewitem_profile_image.setOnClickListener {
