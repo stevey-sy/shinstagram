@@ -5,6 +5,7 @@
     android:layout_height="match_parent">
 
     <RelativeLayout
+        android:layout_margin="10dp"
         android:layout_width="match_parent"
         android:layout_height="100dp">
         <ImageView
@@ -18,6 +19,9 @@
             android:layout_alignParentBottom="true"
             android:id="@+id/account_btn_follow_signout"
             android:text="@string/signout"
+            android:textColor="@color/colorWhite"
+            android:textStyle="bold"
+            android:theme="@style/ButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="40dp" />
 
@@ -81,6 +85,7 @@
 
     </RelativeLayout>
     <androidx.recyclerview.widget.RecyclerView
+        android:layout_margin="10dp"
         android:id="@+id/account_recyclerview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
