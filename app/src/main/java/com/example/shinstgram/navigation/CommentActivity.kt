@@ -2,6 +2,7 @@ package com.example.shinstgram.navigation
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,6 +21,7 @@ import kotlinx.android.synthetic.main.item_comment.view.*
 class CommentActivity : AppCompatActivity() {
     var contentUid : String? = null
     var destinationUid : String? = null
+    var firestore: FirebaseFirestore? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_comment)
@@ -36,7 +38,7 @@ class CommentActivity : AppCompatActivity() {
         comment_btn_send?.setOnClickListener {
             // Content DTO 의 comment 클래스 생성
             // 유저의 정보, 댓글 내용을 매개변수로 담는다.
-            var comment = ContentDTO.Comment()
+            val comment = ContentDTO.Comment()
             comment.userId = FirebaseAuth.getInstance().currentUser?.email
             comment.uid = FirebaseAuth.getInstance().currentUser?.uid
             comment.comment = comment_edit_message.text.toString()
@@ -44,13 +46,24 @@ class CommentActivity : AppCompatActivity() {
             // 가공한 데이터를 Firestore 에 보낸다.
             // 저장할 위치는 "images" 라는 collection
             // images 라는 collection 내부에 폴더(contentUid)를 만든다
-            // 그 폴더 안에 Comments 라는 collection을 생성한다.
+            // 그 폴더 안에 Comments 라는 collection 을 생성한다.
             FirebaseFirestore.getInstance()
                 .collection("images")
                 .document(contentUid!!)
                 .collection("comments")
                 .document()
                 .set(comment)
+            Log.d("댓글", "개수 추가")
+            // comment count 업데이트
+            val tsDoc = FirebaseFirestore.getInstance().collection("images").document(contentUid!!)
+            FirebaseFirestore.getInstance().runTransaction {transaction ->
+                val contentDTO = transaction.get(tsDoc).toObject(ContentDTO::class.java)
+                // 댓글이 아예 없을 경우
+                contentDTO?.commentCount = contentDTO?.commentCount?.plus(1)!!
+                transaction.set(tsDoc,contentDTO)
+                Log.d("댓글", contentDTO.commentCount.toString())
+            }
+
             // 댓글 알림 이벤트 메소드
             commentAlarm(destinationUid!!, comment_edit_message.text.toString())
             // 댓글 업로드 완료하고 edit text 초기화
