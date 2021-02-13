@@ -26,6 +26,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.fragment_user.*
 import kotlinx.android.synthetic.main.fragment_user.view.*
 
 class UserFragment : Fragment() {
@@ -46,7 +47,8 @@ class UserFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // view 세팅
-        fragmentView = LayoutInflater.from(activity).inflate(R.layout.fragment_user,container, false)
+//        fragmentView = LayoutInflater.from(activity).inflate(R.layout.fragment_user,container, false)
+        fragmentView = inflater.inflate(R.layout.fragment_user, container, false)
         // 이전 view 에서 받아온 데이터 활용
         uid = arguments?.getString("destinationUid")
         Log.d("유아이디2", uid.toString())
@@ -54,9 +56,14 @@ class UserFragment : Fragment() {
         auth = FirebaseAuth.getInstance()
         currentUserUid = auth?.currentUser?.uid
         if(uid == currentUserUid) {
+            Log.d("UID 비교", "current: $currentUserUid uid:$uid")
             //mypage
-            fragmentView?.account_btn_follow_signout?.text = getString(R.string.signout)
-            fragmentView?.account_btn_follow_signout?.setOnClickListener {
+//            fragmentView?.account_btn_follow_signout?.text = getString(R.string.signout)
+            fragmentView!!.account_btn_follow_signout?.text = "로그아웃"
+            Log.d("버튼3", fragmentView!!.account_btn_follow_signout?.text as String)
+            Log.d("버튼1", fragmentView!!.account_btn_follow_signout.toString())
+            fragmentView!!.account_btn_follow_signout?.setOnClickListener {
+                Log.d("버튼2", fragmentView!!.account_btn_follow_signout.toString())
                 activity?.finish()
                 startActivity(Intent(activity, LoginActivity::class.java))
                 auth?.signOut()
@@ -107,8 +114,9 @@ class UserFragment : Fragment() {
                     fragmentView?.account_btn_follow_signout?.background?.setColorFilter(
                         ContextCompat.getColor(activity!!, R.color.colorLightGray), PorterDuff.Mode.MULTIPLY)
                 } else {
-                    fragmentView?.account_btn_follow_signout?.text = getString(R.string.follow)
+//                    fragmentView?.account_btn_follow_signout?.text = getString(R.string.follow)
                     if(uid != currentUserUid) {
+                        fragmentView?.account_btn_follow_signout?.text = getString(R.string.follow)
                         fragmentView?.account_btn_follow_signout?.background?.colorFilter = null
                     }
 
