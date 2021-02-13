@@ -7,7 +7,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,8 +25,13 @@ class DetailViewFragment : Fragment() {
     var firestore: FirebaseFirestore? = null
     var uid : String? = null
     var profileUrl : String? = null
+    var timeConverter : TimeConverter? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         // view 세팅
         var view = LayoutInflater.from(activity).inflate(R.layout.fragment_detail, container, false)
         firestore = FirebaseFirestore.getInstance()
@@ -67,7 +71,11 @@ class DetailViewFragment : Fragment() {
             parent: ViewGroup,
             viewType: Int
         ): RecyclerView.ViewHolder {
-            var view = LayoutInflater.from(parent.context).inflate(R.layout.item_detail, parent, false)
+            var view = LayoutInflater.from(parent.context).inflate(
+                R.layout.item_detail,
+                parent,
+                false
+            )
             return CustomViewHolder(view)
         }
 
@@ -99,8 +107,14 @@ class DetailViewFragment : Fragment() {
                 contentDTOs[position].commentCount?.toString()
 
             // upload time
-            viewholder.detailviewitem_uploadtime_textview.text = contentDTOs[position].uploadTime?.toString()
-
+            // 불순물 제거
+//            val replace_dash: String? = contentDTOs[position].uploadTime?.replace("-", "")
+//            val replace_time = replace_dash?.replace(":", "")
+//            val pure_date = replace_time?.replace(" ", "")
+            if (contentDTOs[position].uploadTime != null) {
+                val convertedDate : String? = TimeConverter.CreateDataWithCheck(contentDTOs[position].uploadTime)
+                viewholder.detailviewitem_uploadtime_textview.text = convertedDate
+            }
             // profile image / 2021.02.13 수정
             // 글 작성자의 uid 를 가져와야 됨.
             firestore?.collection("profileImages")?.document(contentDTOs!![position].uid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
@@ -140,7 +154,10 @@ class DetailViewFragment : Fragment() {
                 bundle.putString("destinationUid", contentDTOs[position].uid)
                 bundle.putString("userId", contentDTOs[position].userId)
                 fragment.arguments = bundle
-                activity?.supportFragmentManager?.beginTransaction()?.replace(R.id.main_content, fragment)?.commit()
+                activity?.supportFragmentManager?.beginTransaction()?.replace(
+                    R.id.main_content,
+                    fragment
+                )?.commit()
             }
             // 댓글 이미지 버튼 클릭 이벤트
             viewholder.detailviewitem_comment_imageview.setOnClickListener { v ->
@@ -164,10 +181,10 @@ class DetailViewFragment : Fragment() {
             return contentDTOs.size
         }
 
-        fun favoriteEvent(position : Int) {
+        fun favoriteEvent(position: Int) {
             //
             var tsDoc = firestore?.collection("images")?.document(contentUidList[position])
-            firestore?.runTransaction {transaction ->
+            firestore?.runTransaction { transaction ->
                 var uid = FirebaseAuth.getInstance().currentUser?.uid
                 var contentDTO = transaction.get(tsDoc!!).toObject(ContentDTO::class.java)
 
@@ -184,12 +201,12 @@ class DetailViewFragment : Fragment() {
                     favoriteAlarm(contentDTOs[position].uid!!)
                 }
                 // 수정된 좋아요 정보를 업로드 한다.
-                transaction.set(tsDoc,contentDTO)
+                transaction.set(tsDoc, contentDTO)
 
             }
         }
         // 좋아요 버튼 이벤트 메소드 / 2021.02.12
-        fun favoriteAlarm(destinationUid : String) {
+        fun favoriteAlarm(destinationUid: String) {
             var alarmDTO = AlarmDTO()
             alarmDTO.destinationUid = destinationUid
             alarmDTO.userId = FirebaseAuth.getInstance().currentUser?.email
