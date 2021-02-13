@@ -3,10 +3,12 @@ package com.example.shinstgram.navigation
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import com.example.shinstgram.R
 import com.example.shinstgram.navigation.model.ContentDTO
 import com.google.android.gms.tasks.Task
@@ -16,6 +18,8 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
 import kotlinx.android.synthetic.main.activity_add_photo.*
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class AddPhotoActivity : AppCompatActivity() {
@@ -28,6 +32,7 @@ class AddPhotoActivity : AppCompatActivity() {
     // DB 변수, 실시간 데이터 베이스
     var firestore : FirebaseFirestore? = null
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("로그", "test")
@@ -68,7 +73,14 @@ class AddPhotoActivity : AppCompatActivity() {
             }
         }
     }
+    @RequiresApi(Build.VERSION_CODES.O)
     fun contentUpload() {
+        // 현재 시간 얻기
+        val current = LocalDateTime.now()
+        val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+        val formatted = current.format(formatter)
+//        println("Current: $formatted")
+        Log.d("시간", formatted)
         // make filename
         var timestamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
         var imageFileName = "IMAGE_" + timestamp + "_.png"
@@ -89,6 +101,7 @@ class AddPhotoActivity : AppCompatActivity() {
             contentDTO.uid = auth?.currentUser?.uid
             contentDTO.userId = auth?.currentUser?.email
             contentDTO.explain = addphoto_edit_explain.text.toString()
+            contentDTO.uploadTime = formatted
             contentDTO.timestamp = System.currentTimeMillis()
             // 데이터를 모아서 firestore 에 추가
             firestore?.collection("images")?.document()?.set(contentDTO)
