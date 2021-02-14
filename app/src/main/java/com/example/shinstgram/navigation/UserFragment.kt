@@ -29,7 +29,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_user.*
 import kotlinx.android.synthetic.main.fragment_user.view.*
 
-class UserFragment : Fragment() {
+class UserFragment : Fragment(), RecyclerViewInterface {
     var fragmentView : View? = null
     var firestore : FirebaseFirestore? = null
     var uid : String? = null
@@ -84,7 +84,7 @@ class UserFragment : Fragment() {
             }
         }
         // 어뎁터 세팅
-        fragmentView?.account_recyclerview?.adapter = UserFragmentRecyclerViewAdapter()
+        fragmentView?.account_recyclerview?.adapter = UserFragmentRecyclerViewAdapter(this)
         // 레이아웃 세팅
         fragmentView?.account_recyclerview?.layoutManager = GridLayoutManager(activity!!, 3)
         // 프로필 버튼 클릭 이벤트 / 2021.02.11
@@ -96,6 +96,18 @@ class UserFragment : Fragment() {
         getProfileImage()
         getFollowerAndFollowing()
         return fragmentView
+    }
+    // 리사이클러뷰 아이템 클릭 이벤트
+    override fun onItemClicked(contentUid : String?, writerUid : String?) {
+        Log.d("로그", "User Fragment - onItemClicked() called")
+        // 클릭된 게시글의 detail fragment 로 이동
+        // 필요한 것, 게시글의 index 번호, 게시글 등록자의 uid
+        val intent = Intent(context, CommentActivity::class.java)
+        // 게시글 번호
+        intent.putExtra("contentUid", contentUid)
+        // 게시글 작성자 uid
+        intent.putExtra("destinationUid", writerUid)
+        startActivity(intent)
     }
     // follow, follow 취소 버튼 활성화 메소드 / 2021.02.11
     fun getFollowerAndFollowing() {
@@ -228,34 +240,63 @@ class UserFragment : Fragment() {
             }
         }
     }
-    inner class UserFragmentRecyclerViewAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    inner class UserFragmentRecyclerViewAdapter (recyclerViewInterface: RecyclerViewInterface) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        var recyclerViewInterface : RecyclerViewInterface? = null
         var contentDTOs : ArrayList<ContentDTO> = arrayListOf()
+        var contentUidList: ArrayList<String> = arrayListOf()
+
+        // 생성자
         init {
             firestore?.collection ("images")?.whereEqualTo("uid", uid)?.addSnapshotListener { querySnapshot, firebaseFirestoreException ->
+                contentUidList.clear()
                 // 스냅샷이 null 이면 종료
                 if(querySnapshot == null) return@addSnapshotListener
 
                 // Get data
                 for (snapshot in querySnapshot.documents) {
-                    contentDTOs.add(snapshot.toObject(ContentDTO::class.java)!!)
+                    contentDTOs.add(0, snapshot.toObject(ContentDTO::class.java)!!)
+                    contentUidList.add(0, snapshot.id)
                 }
                 fragmentView?.account_tv_post_count?.text = contentDTOs.size.toString()
                 notifyDataSetChanged()
+                this.recyclerViewInterface = recyclerViewInterface
             }
         }
-
+        // 뷰 홀더가 생성 되었을 때
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             val width = resources.displayMetrics.widthPixels /3
 
             val imageview = ImageView(parent.context);
             imageview.layoutParams = LinearLayoutCompat.LayoutParams(width,width)
-            return CustomViewHolder(imageview)
+            return CustomViewHolder(imageview, this.recyclerViewInterface!!)
         }
 
-        inner class CustomViewHolder(var imageview: ImageView) : RecyclerView.ViewHolder(imageview) {
+        inner class CustomViewHolder(var imageview: ImageView, recyclerViewInterface: RecyclerViewInterface)
+                                        : RecyclerView.ViewHolder(imageview), View.OnClickListener
+        {
+            var recyclerViewInterface : RecyclerViewInterface? = null
 
+            init {
+                Log.d("로그", "CustomViewHolder - init() called")
+                itemView.setOnClickListener(this)
+                this.recyclerViewInterface = recyclerViewInterface
+            }
+
+            override fun onClick(v: View?) {
+                Log.d("로그", "Custom View Holder - onClick() called")
+                Log.d("로그", "contentUid: ${contentUidList[adapterPosition]}")
+                val contentUid : String? = contentUidList[adapterPosition]
+                val writerUid : String? = contentDTOs[adapterPosition].uid
+                this.recyclerViewInterface?.onItemClicked(contentUid, writerUid)
+
+                // 어떻게 그 글을 가져올 수 있을까
+                // content uid 를 user fragment 에 넘겨야한다.
+                // 현재 리사이클러뷰의 포지션에서 content uid 를 가져와야한다.
+
+
+            }
         }
-
+        // 뷰 홀더가 묶였을 때 (데이터와 view 를 묶는다)
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             val imageview = (holder as CustomViewHolder).imageview
             Glide.with(holder.itemView.context).load(contentDTOs[position].imageUrl)
@@ -267,4 +308,6 @@ class UserFragment : Fragment() {
         }
 
     }
+
+
 }
