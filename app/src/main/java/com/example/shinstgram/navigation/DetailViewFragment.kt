@@ -118,7 +118,6 @@ class DetailViewFragment : Fragment() {
             // profile image / 2021.02.13 수정
             // 글 작성자의 uid 를 가져와야 됨.
             firestore?.collection("profileImages")?.document(contentDTOs!![position].uid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
-                contentDTOs!![position].uid?.let { Log.d("로그 uid", it) }
                 // 실시간으로 체크하기 위해서 snapshot을 쓴다?
                 // snapshot 이 null 이면 전단계로 빠져나오는 return?
                 if(documentSnapshot == null) return@addSnapshotListener
@@ -154,10 +153,7 @@ class DetailViewFragment : Fragment() {
                 bundle.putString("destinationUid", contentDTOs[position].uid)
                 bundle.putString("userId", contentDTOs[position].userId)
                 fragment.arguments = bundle
-                activity?.supportFragmentManager?.beginTransaction()?.replace(
-                    R.id.main_content,
-                    fragment
-                )?.commit()
+                activity?.supportFragmentManager?.beginTransaction()?.replace(R.id.main_content, fragment)?.commit()
             }
             // 댓글 이미지 버튼 클릭 이벤트
             viewholder.detailviewitem_comment_imageview.setOnClickListener { v ->
@@ -171,8 +167,6 @@ class DetailViewFragment : Fragment() {
                 intent.putExtra("imageURL", contentDTOs[position].imageUrl)
                 intent.putExtra("explain", contentDTOs[position].explain)
                 intent.putExtra("profileURL", profileUrl)
-
-
                 startActivity(intent)
             }
         }
