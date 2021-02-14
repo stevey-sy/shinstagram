@@ -12,6 +12,7 @@ import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.Glide.init
 import com.bumptech.glide.request.RequestOptions
 import com.example.shinstgram.R
 import com.example.shinstgram.navigation.model.AlarmDTO
@@ -37,6 +38,10 @@ class CommentActivity : AppCompatActivity() {
     var auth : FirebaseAuth? = null
     var currentUserUid : String? = null
 
+    companion object {
+        val TAG : String = "comment Activity"
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,28 +58,12 @@ class CommentActivity : AppCompatActivity() {
         contentUid = intent.getStringExtra("contentUid")
         destinationUid = intent.getStringExtra("destinationUid")
 
-        // 선택된 게시글 정보
-        imageUrl = intent.getStringExtra("imageURL")
-        userId = intent.getStringExtra("userId")
-        explain = intent.getStringExtra("explain")
-        profileUrl = intent.getStringExtra("profileURL")
-
-        // 현재 사용자 프로필 이미지 가져오기
-        getProfileImage()
-
-        // 작성자 프로필 이미지 입히기
-        Glide.with(this)
-            .load(profileUrl)
-            .apply(RequestOptions().circleCrop())
-            .into(detailviewitem_profile_image)
-        // 게시글 작성자 id
-        detailviewitem_profile_textview.text = userId
-        // 게시글 text 내용
-        detailviewitem_explain_textview.text = explain
-        // 게시글 이미지 세팅
-        Glide.with(this)
-            .load(imageUrl)
-            .into(detailviewitem_imageview_content)
+        // 게시글 데이터 세팅 메소드
+        setContent ()
+        // 게시글 작성자 프로필 이미지 가져오기
+        getWriterProfileImage(destinationUid)
+        // 댓글창에 사용할 현재 사용자의 프로필 이미지 가져오기
+        getCurrentUserProfileImage()
 
         // 리사이클러뷰 세팅  / 2021.02.11
         comment_recyclerview.adapter = CommentRecyclerviewAdapter()
@@ -121,8 +110,111 @@ class CommentActivity : AppCompatActivity() {
             comment_edit_message.setText("")
         }
     }
+    fun getWriterProfileImage (writerUid : String?) {
+        // collection 은 firestore 의 세부 폴더 개념인 것 같음.
+        firestore?.collection("profileImages")?.document(writerUid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
+            // 실시간으로 체크하기 위해서 snapshot을 쓴다?
+            // snapshot 이 null 이면 전단계로 빠져나오는 return?
+            if(documentSnapshot == null) return@addSnapshotListener
+            // snapshot 에 url 데이터가 들어 있다면
+            if(documentSnapshot.data != null) {
+                // url 변수에 넣어서 glide 로 사진 출력
+                var url = documentSnapshot?.data!!["image"]
+                Glide.with(this).load(url).apply(RequestOptions().circleCrop()).into(detailviewitem_profile_image)
+            }
+        }
+    }
+
+    // 서버에서 받아온 데이터를 view에 뿌리는 함수
+    fun setContent () {
+        // 게시글 정보 서버로부터 받아오기
+        val content = contentUid?.let { firestore?.collection("images")?.document(it) }
+        content?.get()
+            ?.addOnSuccessListener { documentSnapshot ->
+                if (documentSnapshot != null) {
+                    Log.d(TAG, "DocumentSnapshot data: ${documentSnapshot}")
+                    // 데이터 가져온 것을 view 에 뿌려주면 끝
+                    // 받아온 데이터를 contentDTO 에 넣는다. 어떻게?
+                    val item = documentSnapshot.toObject(ContentDTO::class.java)
+
+                    // 게시글 작성자 id 세팅
+                    val writer = item?.userId
+                    detailviewitem_profile_textview.text = writer
+
+                    // 게시글 이미지 세팅
+                    val imageUrl = item?.imageUrl
+                    Glide.with(this)
+                        .load(imageUrl)
+                        .into(detailviewitem_imageview_content)
+
+                    // 게시글 내용
+                    val content = item?.explain
+                    detailviewitem_explain_textview.text = content
+
+                    // 좋아요 개수
+                    val likeCount = item?.favoriteCount
+                    detailviewitem_favoritecounter_textview.text = likeCount.toString()
+
+                    // 댓글 개수
+                    val commentCount = item?.commentCount
+                    detailviewitem_commentcounter_textview.text = commentCount.toString()
+
+                    // 좋아요 이벤트
+                    detailviewitem_favorite_imageview.setOnClickListener {
+                        Log.d(TAG, "좋아요 클릭 됨")
+//                        favoriteEvent(position)
+                    }
+
+
+                } else {
+                    Log.d(TAG, "No such document")
+                }
+            }
+            ?.addOnFailureListener { exception ->
+                Log.d(TAG, "get failed with ", exception)
+            }
+    }
+    // 좋아요 이벤트 메소드
+    fun favoriteEvent(position: Int) {
+        //
+        val tsDoc = contentUid?.let { firestore?.collection("images")?.document(it) }
+        firestore?.runTransaction { transaction ->
+            var uid = FirebaseAuth.getInstance().currentUser?.uid
+            var contentDTO = transaction.get(tsDoc!!).toObject(ContentDTO::class.java)
+
+            // 좋아요가 이미 클릭되어 있는 경우, 아닌 경우
+            if(contentDTO!!.favorites.containsKey(uid)){
+                // 좋아요 개수 변경
+                contentDTO?.favoriteCount = contentDTO?.favoriteCount -1
+                // 좋아요 누른사람 정보에서 현재 사용자의 uid 를 제거
+                contentDTO?.favorites.remove(uid)
+            } else {
+                // 눌려있지 않다
+                contentDTO?.favoriteCount = contentDTO?.favoriteCount +1
+                contentDTO?.favorites[uid!!] = true
+//                favoriteAlarm(contentDTOs[position].uid!!)
+            }
+            // 수정된 좋아요 정보를 업로드 한다.
+            transaction.set(tsDoc, contentDTO)
+
+        }
+    }
+    // 좋아요 버튼 이벤트 메소드 / 2021.02.12
+    fun favoriteAlarm(destinationUid: String) {
+        var alarmDTO = AlarmDTO()
+        alarmDTO.destinationUid = destinationUid
+        alarmDTO.userId = FirebaseAuth.getInstance().currentUser?.email
+        alarmDTO.uid = FirebaseAuth.getInstance().currentUser?.uid
+        alarmDTO.kind = 0
+        alarmDTO.timestamp = System.currentTimeMillis()
+        // alarmDTO 에 담은 데이터를 Firestore (db) 에 저장
+        FirebaseFirestore.getInstance().collection("alarms").document().set(alarmDTO)
+
+        var message = FirebaseAuth.getInstance()?.currentUser?.email + getString(R.string.alarm_favorite)
+        FcmPush.instance.sendMessage(destinationUid, "Shinstagram", message)
+    }
     // 서버 저장소에 있는 프로필 이미지를 view에 뿌려주는 메소드 / 2021.02.11
-    fun getProfileImage() {
+    fun getCurrentUserProfileImage() {
         // collection 은 firestore 의 세부 폴더 개념인 것 같음.
         firestore?.collection("profileImages")?.document(currentUserUid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
             // 실시간으로 체크하기 위해서 snapshot을 쓴다?
