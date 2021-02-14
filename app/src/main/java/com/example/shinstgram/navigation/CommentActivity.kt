@@ -31,12 +31,15 @@ class CommentActivity : AppCompatActivity() {
     var contentUid : String? = null
     var destinationUid : String? = null
     var imageUrl : String? = null
-    var userId : String? = null
+    var writer : String? = null
     var explain : String? = null
     var profileUrl : String? = null
     var firestore : FirebaseFirestore? = null
     var auth : FirebaseAuth? = null
     var currentUserUid : String? = null
+    var likeCount : Int? = 0
+    var commentCount : Int? = 0
+    var item : ContentDTO? = null
 
     companion object {
         val TAG : String = "comment Activity"
@@ -59,15 +62,35 @@ class CommentActivity : AppCompatActivity() {
         destinationUid = intent.getStringExtra("destinationUid")
 
         // 게시글 데이터 세팅 메소드
-        setContent ()
+        // 게시글 정보 서버로부터 받아오기
+        setDataFromServer()
         // 게시글 작성자 프로필 이미지 가져오기
         getWriterProfileImage(destinationUid)
         // 댓글창에 사용할 현재 사용자의 프로필 이미지 가져오기
         getCurrentUserProfileImage()
 
-        // 리사이클러뷰 세팅  / 2021.02.11
+        // 댓글 리사이클러뷰 세팅  / 2021.02.11
         comment_recyclerview.adapter = CommentRecyclerviewAdapter()
         comment_recyclerview.layoutManager = LinearLayoutManager(this)
+
+        // 좋아요 이벤트
+        detailviewitem_favorite_imageview.setOnClickListener {
+            Log.d(TAG, "좋아요 클릭 됨")
+            // 좋아요 기능 메소드
+            favoriteEvent(contentUid)
+        }
+//        // 좋아요 count 와 빈 하트가 색칠 되도록 처리
+//        if(item?.favorites != null ){
+//            // 현재 사용자의 uid 가 좋아요 누른 사람 목록에 포함되어 있다면
+//            if(item!!.favorites.containsKey(currentUserUid)) {
+//                // 좋아요 버튼 클릭한 경우
+//                detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_orange)
+//            } else {
+//            // 포함되어 있지 않다면
+//                // 좋아요 버튼 클릭하지 않은 경우
+//                detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_gray)
+//            }
+//        }
 
         // 댓글 추가 버튼 클릭 이벤트 / 2021.02.11
         comment_btn_send?.setOnClickListener {
@@ -111,6 +134,7 @@ class CommentActivity : AppCompatActivity() {
             comment_edit_message.setText("")
         }
     }
+    // 작성자의 프로필 이미지 가져오는 메소드 / 2021.02.14
     fun getWriterProfileImage (writerUid : String?) {
         // collection 은 firestore 의 세부 폴더 개념인 것 같음.
         firestore?.collection("profileImages")?.document(writerUid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
@@ -126,8 +150,21 @@ class CommentActivity : AppCompatActivity() {
         }
     }
 
-    // 서버에서 받아온 데이터를 view에 뿌리는 함수
-    fun setContent () {
+    // 서버에서 받아온 데이터를 view 에 뿌리는 함수 / 2021.02.14
+    fun setDataFromServer () {
+//        // 게시글 작성자 id 세팅
+//        detailviewitem_profile_textview.text = writer
+//        // 게시글 이미지 세팅
+//        Glide.with(this)
+//            .load(imageUrl)
+//            .into(detailviewitem_imageview_content)
+//        // 게시글 내용
+//        detailviewitem_explain_textview.text = explain
+//        // 좋아요 개수
+//        detailviewitem_favoritecounter_textview.text = likeCount.toString()
+//        // 댓글 개수
+//        detailviewitem_commentcounter_textview.text = commentCount.toString()
+
         // 게시글 정보 서버로부터 받아오기
         val content = contentUid?.let { firestore?.collection("images")?.document(it) }
         content?.get()
@@ -136,36 +173,42 @@ class CommentActivity : AppCompatActivity() {
                     Log.d(TAG, "DocumentSnapshot data: ${documentSnapshot}")
                     // 데이터 가져온 것을 view 에 뿌려주면 끝
                     // 받아온 데이터를 contentDTO 에 넣는다. 어떻게?
-                    val item = documentSnapshot.toObject(ContentDTO::class.java)
+                    item = documentSnapshot.toObject(ContentDTO::class.java)
 
                     // 게시글 작성자 id 세팅
-                    val writer = item?.userId
+                    writer = item?.userId
                     detailviewitem_profile_textview.text = writer
 
                     // 게시글 이미지 세팅
-                    val imageUrl = item?.imageUrl
+                    imageUrl = item?.imageUrl
                     Glide.with(this)
                         .load(imageUrl)
                         .into(detailviewitem_imageview_content)
 
                     // 게시글 내용
-                    val content = item?.explain
-                    detailviewitem_explain_textview.text = content
+                    explain = item?.explain
+                    detailviewitem_explain_textview.text = explain
 
                     // 좋아요 개수
-                    val likeCount = item?.favoriteCount
+                    likeCount = item?.favoriteCount
                     detailviewitem_favoritecounter_textview.text = likeCount.toString()
 
                     // 댓글 개수
-                    val commentCount = item?.commentCount
+                    commentCount = item?.commentCount
                     detailviewitem_commentcounter_textview.text = commentCount.toString()
 
-                    // 좋아요 이벤트
-                    detailviewitem_favorite_imageview.setOnClickListener {
-                        Log.d(TAG, "좋아요 클릭 됨")
-//                        favoriteEvent(position)
+                    // 좋아요 count 와 빈 하트가 색칠 되도록 처리
+                    if(item?.favorites != null ){
+                        // 현재 사용자의 uid 가 좋아요 누른 사람 목록에 포함되어 있다면
+                        if(item!!.favorites.containsKey(currentUserUid)) {
+                            // 좋아요 버튼 클릭한 경우
+                            detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_orange)
+                        } else {
+                            // 포함되어 있지 않다면
+                            // 좋아요 버튼 클릭하지 않은 경우
+                            detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_gray)
+                        }
                     }
-
 
                 } else {
                     Log.d(TAG, "No such document")
@@ -175,28 +218,60 @@ class CommentActivity : AppCompatActivity() {
                 Log.d(TAG, "get failed with ", exception)
             }
     }
-    // 좋아요 이벤트 메소드
-    fun favoriteEvent(position: Int) {
-        //
-        val tsDoc = contentUid?.let { firestore?.collection("images")?.document(it) }
+    // 좋아요 이벤트 메소드 / 2021.02.14
+    fun favoriteEvent(contentIndex: String?) {
+        // content idx 를 key 값으로 사용하여 db의 조회할 데이터 위치를
+        // Document Reference 형식의 변수 tsDoc 에 담는다.
+        val tsDoc = contentIndex?.let { firestore?.collection("images")?.document(it) }
+        // 담은 db 주소를 사용하여 db 조회 요청
         firestore?.runTransaction { transaction ->
-            var uid = FirebaseAuth.getInstance().currentUser?.uid
-            var contentDTO = transaction.get(tsDoc!!).toObject(ContentDTO::class.java)
+            val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid
+            val contentDTO = transaction.get(tsDoc!!).toObject(ContentDTO::class.java)
 
             // 좋아요가 이미 클릭되어 있는 경우, 아닌 경우
-            if(contentDTO!!.favorites.containsKey(uid)){
+            if(contentDTO!!.favorites.containsKey(currentUserUid)){
                 // 좋아요 개수 변경
                 contentDTO?.favoriteCount = contentDTO?.favoriteCount -1
                 // 좋아요 누른사람 정보에서 현재 사용자의 uid 를 제거
-                contentDTO?.favorites.remove(uid)
+                contentDTO?.favorites.remove(currentUserUid)
+
+                // view 업데이트
+                detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_gray)
+                detailviewitem_favoritecounter_textview.text = contentDTO?.favoriteCount.toString()
+
             } else {
+                Log.d("좋아요 로그", "0 에서 클릭됨")
                 // 눌려있지 않다
                 contentDTO?.favoriteCount = contentDTO?.favoriteCount +1
-                contentDTO?.favorites[uid!!] = true
-//                favoriteAlarm(contentDTOs[position].uid!!)
+                contentDTO?.favorites[currentUserUid!!] = true
+                destinationUid?.let { favoriteAlarm(it) }
+
+                // view 업데이트
+                detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_orange)
+                detailviewitem_favoritecounter_textview.text = contentDTO.favoriteCount.toString()
             }
-            // 수정된 좋아요 정보를 업로드 한다.
             transaction.set(tsDoc, contentDTO)
+            Log.d("좋아요 서버 업로드", "완료")
+            Log.d("좋아요 서버 업로드", contentDTO.toString())
+
+//            // 좋아요가 이미 클릭되어 있는 경우, 아닌 경우
+//            if(item!!.favorites.containsKey(currentUserUid)){
+//                // 좋아요 개수 변경
+//                item?.favoriteCount = item?.favoriteCount?.minus(1)!!
+//                // 좋아요 누른사람 정보에서 현재 사용자의 uid 를 제거
+//                item?.favorites?.remove(currentUserUid)
+//                detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_gray)
+//                detailviewitem_favoritecounter_textview.text = item?.favoriteCount.toString()
+//            } else {
+//                // 눌려있지 않다
+//                item?.favoriteCount = item?.favoriteCount?.plus(1)!!
+//                item?.favorites?.set(currentUserUid!!, true)
+//                destinationUid?.let { favoriteAlarm(it) }
+//                detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_orange)
+//                detailviewitem_favoritecounter_textview.text = item?.favoriteCount.toString()
+//            }
+//            // 수정된 좋아요 정보를 업로드 한다.
+//            item?.let { transaction.set(tsDoc, it) }
 
         }
     }
