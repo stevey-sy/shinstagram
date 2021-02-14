@@ -182,11 +182,11 @@ class LoginActivity : AppCompatActivity() {
                     Toast.makeText(this, task.exception?.message, Toast.LENGTH_SHORT)
                 } else {
                     // Login if you have account
-                    sigininEmail()
+                    signinEmail()
                 }
             }
     }
-    fun sigininEmail() {
+    fun signinEmail() {
         auth?.signInWithEmailAndPassword(
             email_edittext.text.toString(),
             password_edittext.text.toString()
