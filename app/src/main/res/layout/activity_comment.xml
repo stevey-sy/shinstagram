@@ -63,6 +63,44 @@
                 android:layout_height="250dp" />
 
             <LinearLayout
+                android:gravity="center_vertical"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginHorizontal="10dp">
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <ImageView
+                    android:layout_marginLeft="8dp"
+                    android:id="@+id/detailviewitem_favorite_imageview"
+                    android:src="@drawable/ic_like_gray"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp" />
+                <TextView
+                    android:layout_marginLeft="5dp"
+                    android:id="@+id/detailviewitem_favoritecounter_textview"
+                    android:text="0"
+                    android:textSize="16sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+                <ImageView
+                    android:layout_marginLeft="10dp"
+                    android:id="@+id/detailviewitem_comment_imageview"
+                    android:src="@drawable/ic_chat_black"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp" />
+                <TextView
+                    android:layout_marginLeft="5dp"
+                    android:id="@+id/detailviewitem_commentcounter_textview"
+                    android:text="0"
+                    android:textSize="16sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
