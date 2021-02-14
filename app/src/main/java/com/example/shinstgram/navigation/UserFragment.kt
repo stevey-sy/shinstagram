@@ -39,7 +39,6 @@ class UserFragment : Fragment() {
     companion object {
         var PICKER_PROFILE_FROM_ALBUM = 10
     }
-    var imageprofileListenerRegistration: ListenerRegistration? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -59,10 +58,10 @@ class UserFragment : Fragment() {
             Log.d("UID 비교", "current: $currentUserUid uid:$uid")
             //mypage
 //            fragmentView?.account_btn_follow_signout?.text = getString(R.string.signout)
-            fragmentView!!.account_btn_follow_signout?.text = "로그아웃"
+            fragmentView?.account_btn_follow_signout?.text = "로그아웃"
             Log.d("버튼3", fragmentView!!.account_btn_follow_signout?.text as String)
             Log.d("버튼1", fragmentView!!.account_btn_follow_signout.toString())
-            fragmentView!!.account_btn_follow_signout?.setOnClickListener {
+            fragmentView?.account_btn_follow_signout?.setOnClickListener {
                 Log.d("버튼2", fragmentView!!.account_btn_follow_signout.toString())
                 activity?.finish()
                 startActivity(Intent(activity, LoginActivity::class.java))
@@ -76,7 +75,7 @@ class UserFragment : Fragment() {
             mainactivity?.toolbar_btn_back.setOnClickListener {
                 mainactivity.bottom_navigation.selectedItemId = R.id.action_home
             }
-            mainactivity?.toolbar_title_image?.visibility = View.GONE
+//            mainactivity?.toolbar_title_image?.visibility = View.GONE
             mainactivity?.toolbar_username?.visibility = View.VISIBLE
             mainactivity?.toolbar_btn_back?.visibility = View.VISIBLE
             // follow 기능 메소드 2021.02.11
@@ -112,12 +111,12 @@ class UserFragment : Fragment() {
                 if(followDTO?.followers?.containsKey(currentUserUid!!)) {
                     fragmentView?.account_btn_follow_signout?.text = getString(R.string.follow_cancel)
                     fragmentView?.account_btn_follow_signout?.background?.setColorFilter(
-                        ContextCompat.getColor(activity!!, R.color.colorLightGray), PorterDuff.Mode.MULTIPLY)
+                        ContextCompat.getColor(activity!!, R.color.colorBlack), PorterDuff.Mode.MULTIPLY)
                 } else {
 //                    fragmentView?.account_btn_follow_signout?.text = getString(R.string.follow)
                     if(uid != currentUserUid) {
                         fragmentView?.account_btn_follow_signout?.text = getString(R.string.follow)
-                        fragmentView?.account_btn_follow_signout?.background?.colorFilter = null
+//                        fragmentView?.account_btn_follow_signout?.background?.colorFilter = null
                     }
 
                 }
