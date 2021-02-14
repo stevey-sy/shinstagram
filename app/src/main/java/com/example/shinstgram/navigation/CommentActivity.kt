@@ -102,8 +102,9 @@ class CommentActivity : AppCompatActivity() {
                 contentDTO?.commentCount = contentDTO?.commentCount?.plus(1)!!
                 transaction.set(tsDoc,contentDTO)
                 Log.d("댓글", contentDTO.commentCount.toString())
+                // view 에 댓글 개수 업데이트
+                detailviewitem_commentcounter_textview.text = contentDTO.commentCount.toString()
             }
-
             // 댓글 알림 이벤트 메소드
             commentAlarm(destinationUid!!, comment_edit_message.text.toString())
             // 댓글 업로드 완료하고 edit text 초기화
