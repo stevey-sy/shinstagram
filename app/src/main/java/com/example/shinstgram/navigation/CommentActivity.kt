@@ -58,7 +58,7 @@ class CommentActivity : AppCompatActivity() {
     var dialogView : View? = null
 
     companion object {
-        val TAG : String = "comment Activity"
+        val TAG : String = "Comment Activity"
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -258,7 +258,6 @@ class CommentActivity : AppCompatActivity() {
                             Log.d(TAG, "다이얼로그 취소 버튼 clicked")
                         }
                         .show()
-
                 }
                 R.id.delete -> {
                     Log.d(TAG, "삭제 버튼 clicked")
@@ -391,57 +390,30 @@ class CommentActivity : AppCompatActivity() {
     fun favoriteEvent(contentIndex: String?) {
         // content idx 를 key 값으로 사용하여 db의 조회할 데이터 위치를
         // Document Reference 형식의 변수 tsDoc 에 담는다.
-        val tsDoc = contentIndex?.let { firestore?.collection("images")?.document(it) }
-        // 담은 db 주소를 사용하여 db 조회 요청
-        firestore?.runTransaction { transaction ->
-            val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid
-            val contentDTO = transaction.get(tsDoc!!).toObject(ContentDTO::class.java)
+        // 접근할 db 경로
+        val tsDoc = FirebaseFirestore.getInstance().collection("images").document(contentUid!!)
+        FirebaseFirestore.getInstance().runTransaction { transaction ->
+            val contentDTO = transaction.get(tsDoc).toObject(ContentDTO::class.java)
 
-            // 좋아요가 이미 클릭되어 있는 경우, 아닌 경우
-            if(contentDTO!!.favorites.containsKey(currentUserUid)){
-                // 좋아요 개수 변경
+            // 좋아요를 이미 눌렀던 사용자의 경우
+            if (contentDTO!!.favorites.containsKey(currentUserUid)) {
+                // 좋아요 개수를 -1
+//                val newCount : Int? = contentDTO?.favoriteCount!! -1
+//                transaction.update(tsDoc, "favoriteCount", newCount)
                 contentDTO?.favoriteCount = contentDTO?.favoriteCount -1
-                // 좋아요 누른사람 정보에서 현재 사용자의 uid 를 제거
+                // 좋아요 누른 사람 리스트에서 제거
                 contentDTO?.favorites.remove(currentUserUid)
-
-                // view 업데이트
-                detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_gray)
-                detailviewitem_favoritecounter_textview.text = contentDTO?.favoriteCount.toString()
-
             } else {
                 Log.d("좋아요 로그", "0 에서 클릭됨")
                 // 눌려있지 않다
                 contentDTO?.favoriteCount = contentDTO?.favoriteCount +1
                 contentDTO?.favorites[currentUserUid!!] = true
                 destinationUid?.let { favoriteAlarm(it) }
-
-                // view 업데이트
-                detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_orange)
-                detailviewitem_favoritecounter_textview.text = contentDTO.favoriteCount.toString()
             }
             transaction.set(tsDoc, contentDTO)
-            Log.d("좋아요 서버 업로드", "완료")
-            Log.d("좋아요 서버 업로드", contentDTO.toString())
-
-//            // 좋아요가 이미 클릭되어 있는 경우, 아닌 경우
-//            if(item!!.favorites.containsKey(currentUserUid)){
-//                // 좋아요 개수 변경
-//                item?.favoriteCount = item?.favoriteCount?.minus(1)!!
-//                // 좋아요 누른사람 정보에서 현재 사용자의 uid 를 제거
-//                item?.favorites?.remove(currentUserUid)
-//                detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_gray)
-//                detailviewitem_favoritecounter_textview.text = item?.favoriteCount.toString()
-//            } else {
-//                // 눌려있지 않다
-//                item?.favoriteCount = item?.favoriteCount?.plus(1)!!
-//                item?.favorites?.set(currentUserUid!!, true)
-//                destinationUid?.let { favoriteAlarm(it) }
-//                detailviewitem_favorite_imageview.setImageResource(R.drawable.ic_like_orange)
-//                detailviewitem_favoritecounter_textview.text = item?.favoriteCount.toString()
-//            }
-//            // 수정된 좋아요 정보를 업로드 한다.
-//            item?.let { transaction.set(tsDoc, it) }
-
+        }
+            .addOnSuccessListener {
+            setDataFromServer()
         }
     }
     // 좋아요 버튼 이벤트 메소드 / 2021.02.12
