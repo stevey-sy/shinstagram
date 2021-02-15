@@ -9,11 +9,48 @@
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/my_toolbar"
         android:layout_width="match_parent"
-        android:layout_height="35dp" >
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:src="@drawable/logo_title" />
+        android:layout_height="70dp"
+        android:background="#000000">
+        <!--        <TextView-->
+        <!--            android:gravity="center"-->
+        <!--            android:layout_width="match_parent"-->
+        <!--            android:layout_height="match_parent"-->
+        <!--            android:text="Shinstagram"-->
+        <!--            android:textColor="@color/colorWhite"-->
+        <!--            android:textSize="26sp" />-->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <ImageView
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:layout_alignParentLeft="true"
+                android:src="@drawable/ic_arrow_back"
+                android:id="@+id/toolbar_btn_back"/>
+            <TextView
+                android:id="@+id/toolbar_username"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="UserID"
+                android:scrollbarSize="16sp"
+                android:textColor="@color/colorNavIcon"
+                android:gravity="center"
+                android:layout_toRightOf="@id/toolbar_btn_back" />
+
+            <ImageView
+                android:paddingRight="20dp"
+                android:id="@+id/toolbar_title_image"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
+                android:layout_marginStart="0dp"
+                android:layout_marginLeft="0dp"
+                android:foregroundGravity="center_horizontal"
+                android:src="@drawable/shinstagram_logo22"
+                android:paddingEnd="20dp" />
+
+        </RelativeLayout>
     </androidx.appcompat.widget.Toolbar>
 
     <LinearLayout
@@ -29,15 +66,36 @@
         android:layout_below="@id/toolbar_division"
         android:id="@+id/addphoto_image"
         android:layout_margin="8dp"
-        android:layout_width="100dp"
-        android:layout_height="100dp" />
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/editText"
-        android:layout_below="@id/toolbar_division"
-        android:layout_toRightOf="@id/addphoto_image"
+        android:layout_width="match_parent"
+        android:layout_height="200dp" />
+
+    <LinearLayout
+        android:layout_below="@id/addphoto_image"
+        android:id="@+id/note_division"
+        android:layout_marginHorizontal="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/addphoto_image">
+        android:orientation="horizontal"
+        android:gravity="center">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Note"
+            android:textColor="@color/colorBlack"
+            android:textSize="16sp" />
+        <View
+            android:layout_marginLeft="10dp"
+            android:layout_marginHorizontal="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/colorDivision" />
+
+    </LinearLayout>
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/editText"
+        android:layout_below="@id/note_division"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
         <EditText
             android:id="@+id/addphoto_edit_explain"
@@ -51,7 +109,6 @@
         android:text="@string/upload_image"
         android:textColor="@color/colorWhite"
         android:layout_width="match_parent"
-        android:layout_toRightOf="@id/addphoto_image"
         android:layout_height="wrap_content"
         android:theme="@style/ButtonStyle"
         android:layout_below="@id/editText" />
