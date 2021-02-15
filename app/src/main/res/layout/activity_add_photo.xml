@@ -49,6 +49,7 @@
     <Button
         android:id="@+id/btn_upload"
         android:text="@string/upload_image"
+        android:textColor="@color/colorWhite"
         android:layout_width="match_parent"
         android:layout_toRightOf="@id/addphoto_image"
         android:layout_height="wrap_content"
