@@ -20,6 +20,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.android.synthetic.main.fragment_detail.view.*
 import kotlinx.android.synthetic.main.fragment_user.view.*
 import kotlinx.android.synthetic.main.item_detail.view.*
+import java.text.SimpleDateFormat
 
 class DetailViewFragment : Fragment() {
     var firestore: FirebaseFirestore? = null
@@ -39,6 +40,7 @@ class DetailViewFragment : Fragment() {
 
         view.detailviewfragment_recyclerview.adapter = DetailViewRecyclerViewAdapter()
         view.detailviewfragment_recyclerview.layoutManager = LinearLayoutManager(activity)
+
         return view
     }
 
@@ -153,7 +155,10 @@ class DetailViewFragment : Fragment() {
                 bundle.putString("destinationUid", contentDTOs[position].uid)
                 bundle.putString("userId", contentDTOs[position].userId)
                 fragment.arguments = bundle
-                activity?.supportFragmentManager?.beginTransaction()?.replace(R.id.main_content, fragment)?.commit()
+                activity?.supportFragmentManager?.beginTransaction()?.replace(
+                    R.id.main_content,
+                    fragment
+                )?.commit()
             }
             // 댓글 이미지 버튼 클릭 이벤트
             viewholder.detailviewitem_comment_imageview.setOnClickListener { v ->
