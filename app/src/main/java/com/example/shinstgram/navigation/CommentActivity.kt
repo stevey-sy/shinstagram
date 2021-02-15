@@ -1,14 +1,11 @@
 package com.example.shinstgram.navigation
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -17,11 +14,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
 import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.Glide.init
 import com.bumptech.glide.request.RequestOptions
 import com.example.shinstgram.R
 import com.example.shinstgram.navigation.model.AlarmDTO
@@ -41,7 +37,6 @@ import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import kotlin.collections.ArrayList
 
 class CommentActivity : AppCompatActivity() {
 
@@ -153,7 +148,7 @@ class CommentActivity : AppCompatActivity() {
                 .set(comment)
             // 접근할 db 경로
             val tsDoc = FirebaseFirestore.getInstance().collection("images").document(contentUid!!)
-            FirebaseFirestore.getInstance().runTransaction {transaction ->
+            FirebaseFirestore.getInstance().runTransaction { transaction ->
                 val contentDTO = transaction.get(tsDoc).toObject(ContentDTO::class.java)
                 // 댓글이 아예 없을 경우
                 val newCount : Int? = contentDTO?.commentCount!! +1
@@ -174,7 +169,7 @@ class CommentActivity : AppCompatActivity() {
     fun showPopup(view: View) {
         val popup = PopupMenu(this, view)
         popup.inflate(R.menu.article_popup_menu)
-        popup.setOnMenuItemClickListener (PopupMenu.OnMenuItemClickListener{ item: MenuItem? ->
+        popup.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener { item: MenuItem? ->
             when (item!!.itemId) {
                 R.id.modify -> {
                     Log.d(TAG, "수정 버튼 clicked")
@@ -201,8 +196,7 @@ class CommentActivity : AppCompatActivity() {
                     }
 
                     builder.setView(dialogView)
-                        .setPositiveButton("수정") {
-                            dialogInterface, i ->
+                        .setPositiveButton("수정") { dialogInterface, i ->
                             // 사용자가 수정한 게시글 내용이 들어있는 변수
                             val editedExplain = dialogView?.addphoto_edit_explain?.text.toString()
                             // 이미지를 변경했냐 안했냐 구분 해야됨
@@ -218,28 +212,39 @@ class CommentActivity : AppCompatActivity() {
                                 var imageFileName = "IMAGE_" + timestamp + "_.png"
 
                                 // Firebase Storage 에 저장할 위치 지정
-                                var storageRef = storage?.reference?.child("images")?.child(imageFileName)
+                                var storageRef = storage?.reference?.child("images")?.child(
+                                    imageFileName
+                                )
 
                                 // 새로운 이미지 Fire Storage 에 저장 명령
-                                storageRef?.putFile(photoUri!!)?.continueWithTask {
-                                    task: Task<UploadTask.TaskSnapshot> ->
-                                    return@continueWithTask storageRef.downloadUrl
-                                }?.addOnSuccessListener {
-                                    uri ->
-                                    firestore?.collection("images")?.document(contentUid!!)?.update("explain", editedExplain, "imageUrl", uri.toString())
+                                storageRef?.putFile(photoUri!!)
+                                    ?.continueWithTask { task: Task<UploadTask.TaskSnapshot> ->
+                                        return@continueWithTask storageRef.downloadUrl
+                                    }?.addOnSuccessListener { uri ->
+                                        firestore?.collection("images")?.document(contentUid!!)
+                                            ?.update(
+                                                "explain",
+                                                editedExplain,
+                                                "imageUrl",
+                                                uri.toString()
+                                            )
 //                                    firestore?.collection("images")?.document(contentUid!!)?.update("imageUrl", photoUri)
-                                    Log.d(TAG, "이미지 + 내용 수정 완료")
-                                    // 수정된 데이터로 activity 의 view binding
-                                    setDataFromServer()
-                                }
+                                        Log.d(TAG, "이미지 + 내용 수정 완료")
+                                        // 수정된 데이터로 activity 의 view binding
+                                        setDataFromServer()
+                                    }
 
                             } else {
                                 // B. 이미지를 변경하지 않았을 때 수정 코드
                                 // 서버 통신으로 db 업데이트 하기
-                                val content = contentUid?.let { firestore?.collection("images")?.document(it) }
+                                val content = contentUid?.let {
+                                    firestore?.collection("images")?.document(
+                                        it
+                                    )
+                                }
                                 content?.update("explain", editedExplain)
                                     ?.addOnCompleteListener {
-                                        if(it.isSuccessful) {
+                                        if (it.isSuccessful) {
                                             Log.d("수정 activity", "수정 성공")
                                             setDataFromServer()
                                             popup.dismiss()
@@ -249,7 +254,7 @@ class CommentActivity : AppCompatActivity() {
                                     }
                             }
                         }
-                        .setNegativeButton("취소") { dialogInterface, i->
+                        .setNegativeButton("취소") { dialogInterface, i ->
                             Log.d(TAG, "다이얼로그 취소 버튼 clicked")
                         }
                         .show()
@@ -258,6 +263,21 @@ class CommentActivity : AppCompatActivity() {
                 R.id.delete -> {
                     Log.d(TAG, "삭제 버튼 clicked")
                     // 삭제 dialog 생성
+                    val dialog : AlertDialog.Builder = AlertDialog.Builder(this)
+                    dialog.setTitle("게시글 삭제")
+                    dialog.setMessage("게시글을 삭제하시겠습니까?")
+                    dialog.setPositiveButton("삭제") { dialogInterface, i ->
+                        // 게시글 삭제 이벤트
+                        firestore?.collection("images")?.document(contentUid!!)?.delete()
+                            ?.addOnSuccessListener {
+                                Log.d(TAG, "게시글 삭제 완료")
+                                finish()
+                            }
+                    }
+                    dialog.setNegativeButton("취소") { dialogInterface, i ->
+                        // 취소 버튼 이벤트
+                    }
+                    dialog.show()
                 }
             }
             true
@@ -282,7 +302,7 @@ class CommentActivity : AppCompatActivity() {
     }
 
     // 작성자의 프로필 이미지 가져오는 메소드 / 2021.02.14
-    fun getWriterProfileImage (writerUid : String?) {
+    fun getWriterProfileImage(writerUid: String?) {
         // collection 은 firestore 의 세부 폴더 개념인 것 같음.
         firestore?.collection("profileImages")?.document(writerUid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
             // 실시간으로 체크하기 위해서 snapshot을 쓴다?
@@ -292,7 +312,9 @@ class CommentActivity : AppCompatActivity() {
             if(documentSnapshot.data != null) {
                 // url 변수에 넣어서 glide 로 사진 출력
                 var url = documentSnapshot?.data!!["image"]
-                Glide.with(this).load(url).apply(RequestOptions().circleCrop()).into(detailviewitem_profile_image)
+                Glide.with(this).load(url).apply(RequestOptions().circleCrop()).into(
+                    detailviewitem_profile_image
+                )
             }
         }
     }
@@ -447,12 +469,14 @@ class CommentActivity : AppCompatActivity() {
             if(documentSnapshot.data != null) {
                 // url 변수에 넣어서 glide 로 사진 출력
                 var url = documentSnapshot?.data!!["image"]
-                Glide.with(this).load(url).apply(RequestOptions().circleCrop()).into(detailviewitem_profile_image_comment)
+                Glide.with(this).load(url).apply(RequestOptions().circleCrop()).into(
+                    detailviewitem_profile_image_comment
+                )
             }
         }
     }
     // 댓글 알림 메소드 / 2021.02.12
-    fun commentAlarm(destinationUid: String, message : String){
+    fun commentAlarm(destinationUid: String, message: String){
         var alarmDTO = AlarmDTO()
         alarmDTO.kind = 1
         alarmDTO.destinationUid = destinationUid
@@ -489,7 +513,11 @@ class CommentActivity : AppCompatActivity() {
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-            var view = LayoutInflater.from(parent.context).inflate(R.layout.item_comment, parent, false)
+            var view = LayoutInflater.from(parent.context).inflate(
+                R.layout.item_comment,
+                parent,
+                false
+            )
             return CustomViewHolder(view)
         }
 
@@ -497,7 +525,7 @@ class CommentActivity : AppCompatActivity() {
             return comments.size
         }
 
-        private inner class CustomViewHolder(view : View) : RecyclerView.ViewHolder(view)
+        private inner class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
