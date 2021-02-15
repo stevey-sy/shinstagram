@@ -149,18 +149,18 @@ class CommentActivity : AppCompatActivity() {
                 .document(contentUid!!)
                 .collection("comments")
                 .document()
+                // 댓글 내용 저장
                 .set(comment)
-            Log.d("댓글", "개수 추가")
-            // comment count 업데이트
+            // 접근할 db 경로
             val tsDoc = FirebaseFirestore.getInstance().collection("images").document(contentUid!!)
             FirebaseFirestore.getInstance().runTransaction {transaction ->
                 val contentDTO = transaction.get(tsDoc).toObject(ContentDTO::class.java)
                 // 댓글이 아예 없을 경우
-                contentDTO?.commentCount = contentDTO?.commentCount?.plus(1)!!
-                transaction.set(tsDoc,contentDTO)
-                Log.d("댓글", contentDTO.commentCount.toString())
-                // view 에 댓글 개수 업데이트
-                detailviewitem_commentcounter_textview.text = contentDTO.commentCount.toString()
+                val newCount : Int? = contentDTO?.commentCount!! +1
+                Log.d("현재 댓글 개수", current.toString())
+                transaction.update(tsDoc, "commentCount", newCount)
+            }.addOnSuccessListener {
+                setDataFromServer()
             }
             // 댓글 알림 이벤트 메소드
             commentAlarm(destinationUid!!, comment_edit_message.text.toString())
@@ -174,9 +174,7 @@ class CommentActivity : AppCompatActivity() {
     fun showPopup(view: View) {
         val popup = PopupMenu(this, view)
         popup.inflate(R.menu.article_popup_menu)
-
         popup.setOnMenuItemClickListener (PopupMenu.OnMenuItemClickListener{ item: MenuItem? ->
-
             when (item!!.itemId) {
                 R.id.modify -> {
                     Log.d(TAG, "수정 버튼 clicked")
@@ -281,64 +279,6 @@ class CommentActivity : AppCompatActivity() {
                 finish();
             }
         }
-    }
-    fun contentUpload() {
-        // 현재 시간 얻기
-//        val current = LocalDateTime.now()
-//        val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
-//        val formatted = current.format(formatter)
-////        println("Current: $formatted")
-//        Log.d("시간", formatted)
-//        // make filename
-//        var timestamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-//        var imageFileName = "IMAGE_" + timestamp + "_.png"
-//        // 업로드할 이미지 name 선언
-//        var storageRef = storage?.reference?.child("images")?.child(imageFileName)
-//
-//        // 수정하려면
-//        // content uid 를 사용해서 폴더 접근
-//        // 내용물 set을 바꾼다.
-//        // 게시글 정보 서버로부터 받아오기
-//        var map = mutableMapOf<String, Any>()
-//        map["explain"] = addphoto_edit_explain.text
-        val editedExplain = addphoto_edit_explain.text.toString()
-        val content = contentUid?.let { firestore?.collection("images")?.document(it) }
-        content?.update("explain", editedExplain)
-            ?.addOnCompleteListener {
-                if(it.isSuccessful) {
-                    Log.d("수정 activity", "수정 성공")
-                } else {
-                    Log.d("수정 activity", "수정 실패")
-                }
-            }
-        val intent = Intent(this, CommentActivity::class.java)
-        // 게시글 번호
-        intent.putExtra("contentUid", contentUid)
-        // 게시글 작성자 uid
-        intent.putExtra("destinationUid", destinationUid)
-        startActivity(intent)
-
-//        // 1. promise
-//        storageRef?.putFile(photoUri!!)?.continueWithTask {
-//                task: Task<UploadTask.TaskSnapshot> ->
-//            return@continueWithTask storageRef.downloadUrl
-//        }?.addOnSuccessListener {
-//                uri ->
-//            var contentDTO = ContentDTO()
-//            // Insert downloadUrl of Image
-//            contentDTO.imageUrl = uri.toString()
-//            // Insert uid of user
-//            contentDTO.uid = auth?.currentUser?.uid
-//            contentDTO.userId = auth?.currentUser?.email
-//            contentDTO.explain = addphoto_edit_explain.text.toString()
-//            contentDTO.uploadTime = formatted
-//            contentDTO.timestamp = System.currentTimeMillis()
-//            // 데이터를 모아서 firestore 에 추가
-//            firestore?.collection("images")?.document()?.set(contentDTO)
-//            // 정상적으로 종료한다는 flag
-//            setResult(Activity.RESULT_OK)
-//            finish()
-//        }
     }
 
     // 작성자의 프로필 이미지 가져오는 메소드 / 2021.02.14
