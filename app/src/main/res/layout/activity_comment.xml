@@ -10,7 +10,8 @@
         android:id="@+id/my_toolbar"
         android:layout_width="match_parent"
         android:layout_height="70dp"
-        android:background="#000000" >
+        android:background="#000000"
+        android:paddingRight="20dp">
 
         <ImageView
             android:id="@+id/toolbar_title_image"
@@ -74,7 +75,7 @@
             </LinearLayout>
             <ImageView
                 android:id="@+id/detailviewitem_imageview_content"
-                android:scaleType="fitXY"
+                android:scaleType="centerInside"
                 android:layout_width="match_parent"
                 android:layout_height="250dp" />
 
