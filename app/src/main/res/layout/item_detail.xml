@@ -37,6 +37,7 @@
                     android:textColor="@color/colorWhite"/>
             </LinearLayout>
             <ImageView
+                android:layout_marginTop="10dp"
                 android:id="@+id/detailviewitem_imageview_content"
                 android:scaleType="centerInside"
                 android:layout_width="match_parent"
