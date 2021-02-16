@@ -35,6 +35,8 @@ class UserFragment : Fragment(), RecyclerViewInterface {
     var uid : String? = null
     var auth : FirebaseAuth? = null
     var currentUserUid : String? = null
+    var followingListenerRegistration: ListenerRegistration? = null
+    var followListenerRegistration: ListenerRegistration? = null
     // static 과 비슷한 역할
     companion object {
         var PICKER_PROFILE_FROM_ALBUM = 10
@@ -94,7 +96,9 @@ class UserFragment : Fragment(), RecyclerViewInterface {
             activity?.startActivityForResult(photoPickerIntent, PICKER_PROFILE_FROM_ALBUM)
         }
         getProfileImage()
-        getFollowerAndFollowing()
+//        getFollowerAndFollowing()
+        getFollowing()
+        getFollower()
         return fragmentView
     }
     // 리사이클러뷰 아이템 클릭 이벤트
@@ -109,7 +113,44 @@ class UserFragment : Fragment(), RecyclerViewInterface {
         intent.putExtra("destinationUid", writerUid)
         startActivity(intent)
     }
+    // follwers = 나를 follow 하고 있는 사람
+    // followings = 내가 follow 하고 있는 사람
     // follow, follow 취소 버튼 활성화 메소드 / 2021.02.11
+
+    fun getFollowing() {
+        followingListenerRegistration = firestore?.collection("users")?.document(uid!!)?.addSnapshotListener { documentSnapshot, frebaseFirestoreException ->
+            val followDTO = documentSnapshot?.toObject(FollowDTO::class.java)
+            if (followDTO == null) return@addSnapshotListener
+            fragmentView!!.account_tv_following_count.text = followDTO?.followingCount.toString()
+        }
+    }
+
+    fun getFollower() {
+
+        followListenerRegistration = firestore?.collection("users")?.document(uid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
+            val followDTO = documentSnapshot?.toObject(FollowDTO::class.java)
+            if (followDTO == null) return@addSnapshotListener
+            fragmentView?.account_tv_follow_count?.text = followDTO?.followerCount.toString()
+            if (followDTO?.followers?.containsKey(currentUserUid)!!) {
+
+//                fragmentView?.account_btn_follow_signout?.text = getString(R.string.follow_cancel)
+                fragmentView?.account_btn_follow_signout?.setText(R.string.follow_cancel)
+//                fragmentView?.account_btn_follow_signout
+//                    ?.background
+//                    ?.setColorFilter(ContextCompat.getColor(activity!!, R.color.colorBlack), PorterDuff.Mode.MULTIPLY)
+            } else {
+
+                if (uid != currentUserUid) {
+
+//                    fragmentView?.account_btn_follow_signout?.text = getString(R.string.follow)
+                    fragmentView?.account_btn_follow_signout?.setText(R.string.follow)
+//                    fragmentView?.account_btn_follow_signout?.background?.colorFilter = null
+                }
+            }
+        }
+
+    }
+
     fun getFollowerAndFollowing() {
         firestore?.collection("users")?.document(uid!!)?.addSnapshotListener { documentSnapshot, firebaseFirestoreException ->
             if(documentSnapshot == null) return@addSnapshotListener
@@ -130,61 +171,67 @@ class UserFragment : Fragment(), RecyclerViewInterface {
                         fragmentView?.account_btn_follow_signout?.text = getString(R.string.follow)
 //                        fragmentView?.account_btn_follow_signout?.background?.colorFilter = null
                     }
-
                 }
             }
         }
     }
     // follow 클릭했을 때의 메소드 2021.02.11
+    // follower = 누군가가 -> 나를 follower
+    // following = 내가 -> 누군가를 following
     fun requestFollow() {
-        // 다른 사람이 나를 follow 할 때의 경우
-        // 나를 follow 한사람의 uid 정보를 db에 저장
+        // 현재 app 사용자의 user account 접근
         var tsDocFollowing = firestore!!.collection("users").document(currentUserUid!!)
         firestore?.runTransaction { transaction ->
+
+            // following = 내가 -> 누군가를 following 하는 경우
             var followDTO = transaction.get(tsDocFollowing).toObject(FollowDTO::class.java)
-            // 아직 아무도 follow 누르지 않았을 때의 경우
             if(followDTO == null) {
                 // follow 정보를 저장할 dto 생성
                 followDTO = FollowDTO()
                 followDTO.followingCount = 1
-                followDTO.followers[uid!!] = true
+                // 내가 follow 할 사람의 uid 를 following 리스트에 추가
+                followDTO.followings[uid!!] = true
+                // 데이터 업로드 명령
                 transaction.set(tsDocFollowing, followDTO)
                 return@runTransaction
             }
-            // 해당 유저가 이미 follow 를 눌렀었던 경우 (follow 취소)
+
+            // 내가 누군가를 following 하는 것을 취소
+            // 만약, followings 리스트에 내가 선택한 uid 가 이미 존재한다면,
             if(followDTO?.followings?.containsKey(uid)!!) {
-                // follow 취소
                 followDTO?.followingCount = followDTO?.followingCount -1
-//                followDTO?.followingCount -= 1
                 // follow 리스트에서 uid 제거
-                followDTO?.followers.remove(uid)
+                followDTO?.followings.remove(uid)
+            // 만약, following 리스트에 내가 선택한 user 가 없다면
             }else {
-                // follow 시작
+                // following 시작
                 followDTO?.followingCount = followDTO?.followingCount +1
                 // follow 리스트에 uid 추가
-                followDTO!!.followers[uid!!] = true
+                followDTO!!.followings[uid!!] = true
+                followAlarm(uid!!)
             }
             transaction.set(tsDocFollowing, followDTO)
             return@runTransaction
         }
-        // 내가 다른 사람을 follow 할 경우
-        // firestore 에서 해당 유저의 follower 데이터를 가져온다
+
+        // 내가 following 누른 사용자의 입장
+        // following 유저의 db 접근
         var tsDocFollower = firestore!!.collection("users")?.document(uid!!)
         firestore?.runTransaction { transaction ->
             // 받아온 데이터를 followDTO type 으로 가공한다.
             var followDTO = transaction.get(tsDocFollower).toObject(FollowDTO::class.java)
             // 해당 유저의 follower 데이터가 존재하지 않을 경우
             if(followDTO == null) {
-                // 새로 만든다
-                var followDTO = FollowDTO()
+                followDTO = FollowDTO()
+                // following 당한 유저의 follower count 를 1 추가한다.
                 followDTO!!.followerCount = 1
-                // 나의 uid 를 상대방(내가 follower 한 유저) follower 데이터에 추가
+                // following 당한 유저의 follower 리스트에 나를 추가
                 followDTO!!.followers[currentUserUid!!] = true
                 transaction.set(tsDocFollower, followDTO!!)
-                followAlarm(uid!!)
                 return@runTransaction
             }
-            // 내가 상대방을 follower 취소, 시작 할 때.
+            // following 받은 유저의 follower 리스트에 이미 존재한다면,
+            // follower 를 취소하겠다는 의미
             if(followDTO!!.followers?.containsKey(currentUserUid!!)!!) {
                 // follower 취소
                 followDTO!!.followerCount = followDTO!!.followerCount -1
@@ -197,7 +244,6 @@ class UserFragment : Fragment(), RecyclerViewInterface {
 //                followDTO!!.followerCount = followDTO!!.followerCount +1
                 followDTO!!.followers[currentUserUid!!] = true
                 // follow 알림 메소드
-                followAlarm(uid!!)
             }
             // db 종료
             transaction.set(tsDocFollower, followDTO!!)
