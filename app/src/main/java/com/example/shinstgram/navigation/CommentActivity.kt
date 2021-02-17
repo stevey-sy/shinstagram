@@ -459,7 +459,7 @@ class CommentActivity : AppCompatActivity() {
         // alarmDTO 를 db에 저장
         FirebaseFirestore.getInstance().collection("alarms").document().set(alarmDTO)
         // 댓글 알림 보내기
-        var msg = FirebaseAuth.getInstance().currentUser?.email + " " + getString(R.string.alarm_comment) + " of " + message
+        var msg = FirebaseAuth.getInstance().currentUser?.email + " " + getString(R.string.alarm_comment) + "  \""+message+ "\""
         FcmPush.instance.sendMessage(destinationUid, "Shinstagram", msg)
     }
 
