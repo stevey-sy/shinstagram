@@ -167,11 +167,6 @@ class DetailViewFragment : Fragment() {
                 intent.putExtra("contentUid", contentUidList[position])
                 // 게시글 작성자 uid
                 intent.putExtra("destinationUid", contentDTOs[position].uid)
-                // 게시글 내용
-                intent.putExtra("userId", contentDTOs[position].userId)
-                intent.putExtra("imageURL", contentDTOs[position].imageUrl)
-                intent.putExtra("explain", contentDTOs[position].explain)
-                intent.putExtra("profileURL", profileUrl)
                 startActivity(intent)
             }
         }

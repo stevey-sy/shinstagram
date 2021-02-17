@@ -15,6 +15,7 @@ import com.example.shinstgram.R
 import com.example.shinstgram.navigation.model.AlarmDTO
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.android.synthetic.main.fragment_alarm.view.*
 import kotlinx.android.synthetic.main.item_comment.view.*
 import java.text.SimpleDateFormat
@@ -46,13 +47,13 @@ class AlarmFragment : Fragment() {
             // 내 아이디와 작성자의 아이디가 같을 때
             FirebaseFirestore.getInstance().collection("alarms")
                 .whereEqualTo("destinationUid", uid)
-//                .orderBy("timestamp")
+//                .orderBy("timestamp",  Query.Direction.DESCENDING)
                 .addSnapshotListener { querySnapshot, firebaseFirestoreException ->
                     alarmDTOList.clear()
                     if(querySnapshot == null) return@addSnapshotListener
                     // snapshot 에 담긴 데이터를 하나씩 나열한다
                     for (snapshot in querySnapshot.documents) {
-                        alarmDTOList.add(0, snapshot.toObject(AlarmDTO::class.java)!!)
+                        alarmDTOList.add(snapshot.toObject(AlarmDTO::class.java)!!)
                     }
                     notifyDataSetChanged()
                 }
@@ -68,8 +69,9 @@ class AlarmFragment : Fragment() {
 
         inner class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
+        @SuppressLint("SimpleDateFormat")
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            var view = holder.itemView
+            val view = holder.itemView
 
             // 알림 누른 사람의 프로필 이미지를 가져온다다
            FirebaseFirestore.getInstance().collection("profileImages").document(alarmDTOList[position].uid!!).get().addOnCompleteListener{
@@ -113,18 +115,6 @@ class AlarmFragment : Fragment() {
         override fun getItemCount(): Int {
             return alarmDTOList.size
         }
-
-        @SuppressLint("SimpleDateFormat")
-        private fun getDateTime(longDate: Long?): String {
-            try {
-                val sdf = SimpleDateFormat("yyyy/MM/dd")
-                val netDate = longDate?.times(1000)?.let { Date(it) }
-                return sdf.format(netDate)
-            } catch (e: Exception) {
-                return e.toString()
-            }
-        }
-
     }
 
 }
